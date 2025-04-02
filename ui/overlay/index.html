@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Overlay</title>
+</head>
+
+<body>
+<div id="root">
+    <div id="time">00:00:00</div>
+    <div class="container">
+        <div class="title">Dimensions:</div>
+        <div class="metric"><span class="label">Video size: </span>
+            <div id="dimensions">1x1</div>
+        </div>
+        <div class="metric"><span class="label">Frame size: </span>
+            <div id="windowSize">1x1</div>
+        </div>
+        <div class="metric"><span class="label">Playback scale: </span>
+            <div id="scale">x</div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="title">Click coordinates:</div>
+        <div class="metric"><span class="label">First click: </span>
+            <div id="firstMousePos">x,y</div>
+        </div>
+        <div class="metric"><span class="label">Second click: </span>
+            <div id="secondMousePos">x,y</div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="title">Crop coordinates:</div>
+        <div id="rectangleCoords">x,y</div>
+        <div id="normalisedRectangleCoords">x,y</div>
+    </div>
+    <div class="container">
+        <div class="title">Info</div>
+        <div class="infoText">Click anywhere to select the first corner of your crop, then press "c" and click a second time to complete the process.</div>
+        <div class="infoText">Pressing "alt+c" will remove the crop allowing you to start over.</div>
+        <div class="infoText">To copy the ffmpeg command to your clipboard press "alt+k" and accept the prompt.</div>
+        <div class="infoText">Hide this text by pressing "h".</div>
+    </div>
+</div>
+<script type="module" src="index.js"></script>
+</body>
+
+</html>

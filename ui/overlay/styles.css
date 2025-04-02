@@ -1,0 +1,54 @@
+#root {
+    color: white;
+    width: 20%;
+    min-width: 200px;
+    max-width: 350px;
+    font-family: Helvetica, sans-serif;
+    font-size: 14px;
+
+}
+
+.title {
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-bottom: 3px;
+}
+
+.metric {
+    display: block;
+    vertical-align: middle;
+    margin-right: 15px; /* Adjust spacing between metric pairs */
+}
+
+.label,
+.metric div {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.container {
+    border: 3px solid white;
+    padding: 8px;
+    margin: 16px;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.25);
+
+}
+
+.label {
+    font-weight: bold;
+}
+
+.size div {
+    display: block;
+    margin-top: 5px; /* Adds spacing between elements */
+
+}
+.infoText {
+    padding: 4px 0;
+}
+
+.hidden {
+    display: none;
+}

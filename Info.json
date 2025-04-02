@@ -1,0 +1,23 @@
+{
+  "name": "pureIINA",
+  "identifier": "com.example.iina-plugin-template",
+  "version": "1.0.0",
+  "description": "Plugin to set start and end point, select crop and generate ffmpeg command.",
+  "author": {
+    "name": "IINA Developers",
+    "email": "developers@iina.io",
+    "url": "https://iina.io"
+  },
+  "entry": "dist/index.js",
+  "global": "dist/global.js",
+  "permissions": [
+    "show-osd",
+    "show-alert",
+    "video-overlay",
+    "network-request",
+    "file-system"
+  ],
+  "allowedDomains": ["*"],
+  "preferencesPage": "pref.html",
+  "preferenceDefaults": {}
+}
