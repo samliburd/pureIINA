@@ -1,12 +1,4 @@
-const {
-  standaloneWindow,
-  overlay,
-  console,
-  menu,
-  core,
-  input,
-  utils,
-} = iina;
+const { standaloneWindow, overlay, console, menu, core, input, utils } = iina;
 
 // Initialize overlay
 overlay.loadFile("dist/ui/overlay/index.html");
@@ -14,13 +6,13 @@ overlay.setClickable(true);
 
 // Global variables
 let dimensions, frame, scale, rectangleCoordinates, normalizedCoordinates;
-let firstClickPos = {x: 0, y: 0};
-let secondClickPos = {x: 0, y: 0};
+let firstClickPos = { x: 0, y: 0 };
+let secondClickPos = { x: 0, y: 0 };
 let isWaitingForSecondClick = false;
 let isHidden = true;
-let timeArr = []
+let timeArr = [];
 let outputFilename = ""; // Store the output filename globally
-let useCrop = true;
+let useCrop = false;
 const regex = /\s/g;
 const filename = core.status.url.replace("file://", "").replace(regex, "\\ ");
 
@@ -49,13 +41,13 @@ function getNormalizedCoordinates(coordinates, scale) {
 }
 
 function formatDecimals(objArray, round = false) {
-  objArray.forEach(obj => {
+  objArray.forEach((obj) => {
     if (!round) {
-      Object.keys(obj).forEach(key => {
+      Object.keys(obj).forEach((key) => {
         obj[key] = Number(obj[key]).toFixed(2);
       });
     } else {
-      Object.keys(obj).forEach(key => {
+      Object.keys(obj).forEach((key) => {
         obj[key] = Number(Math.round(obj[key]));
       });
     }
@@ -65,16 +57,19 @@ function formatDecimals(objArray, round = false) {
 function updateClickPos(x, y) {
   if (!isWaitingForSecondClick) {
     // First click
-    firstClickPos = {x, y};
+    firstClickPos = { x, y };
   } else {
     // Second click
-    secondClickPos = {x, y};
+    secondClickPos = { x, y };
     isWaitingForSecondClick = false;
   }
 }
 
 function updateVariables() {
-  dimensions = {videoWidth: core.status.videoWidth, videoHeight: core.status.videoHeight};
+  dimensions = {
+    videoWidth: core.status.videoWidth,
+    videoHeight: core.status.videoHeight,
+  };
   frame = core.window.frame;
   scale = dimensions.videoWidth / frame.width;
   rectangleCoordinates = getRectangleCoordinates(firstClickPos, secondClickPos);
@@ -120,17 +115,21 @@ async function copyToClipboard() {
   // Replace spaces in the filename with backslash-escaped spaces
   const filename = core.status.url.replace("file://", "").replace(/\s/g, "\\ ");
 
-
   // Construct the ffmpeg command with preserved backslashes
-  const ffmpegCommand = `ffmpeg -ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf "crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}" \\` : '\\'}
--c:v libx264 -crf 17 -preset fast -c:a aac -map_metadata -1 -map_chapters -1 -movflags +faststart ${outputFilename}`;
+  const ffmpegCommand = `ffmpeg -ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf "crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}" \\` : "\\"}
+-c:v libx264 -crf 17 -preset fast -c:a aac -map_metadata -1 -map_chapters -1 -movflags +faststart ${outputFilename} && echo ${outputFilename}`;
 
   // Ask the user for confirmation
-  const userResponse = utils.ask(`Do you want to copy the following command to your clipboard?\n\n${ffmpegCommand}`);
+  const userResponse = utils.ask(
+    `Do you want to copy the following command to your clipboard?\n\n${ffmpegCommand}`,
+  );
 
   if (userResponse) {
     // Copy the command to the clipboard
-    const {status, stdout, stderr} = await utils.exec('/bin/bash', ['-c', `echo "${ffmpegCommand}" | pbcopy`]);
+    const { status, stdout, stderr } = await utils.exec("/bin/bash", [
+      "-c",
+      `echo "${ffmpegCommand}" | pbcopy`,
+    ]);
     if (status === 0) {
       core.osd("Command copied to clipboard");
     } else {
@@ -143,9 +142,12 @@ async function copyToClipboard() {
 
 // Event listeners
 input.onMouseDown(input.MOUSE, () => {
-  input.onMouseUp(input.MOUSE, ({x, y}) => {
-    overlay.show();
-    updateClickPos(Math.round(x), Math.round(core.window.frame.height - y));
+  input.onMouseUp(input.MOUSE, ({ x, y }) => {
+    if (useCrop) {
+      overlay.show();
+      core.osd(x.toString());
+      updateClickPos(Math.round(x), Math.round(core.window.frame.height - y));
+    }
   });
 });
 
@@ -155,21 +157,19 @@ input.onKeyDown("c", () => {
 });
 
 input.onKeyDown("alt+c", () => {
-  firstClickPos = {x: 0, y: 0};
-  secondClickPos = {x: 0, y: 0};
+  firstClickPos = { x: 0, y: 0 };
+  secondClickPos = { x: 0, y: 0 };
   overlay.postMessage("clear-rectangle");
   core.osd("Crop cancelled.");
-
 });
 
 input.onKeyDown("h", () => {
   isHidden = !isHidden;
 });
 
-
 input.onKeyDown("alt+k", async () => {
   if (!useCrop || (secondClickPos.x > 0 && secondClickPos.y > 0)) {
-    copyToClipboard()
+    copyToClipboard();
   } else {
     core.osd("Please select a crop before continuing.");
   }
@@ -192,36 +192,46 @@ menu.addItem(
 menu.addItem(
   menu.item("Toggle crop", () => {
     toggleCrop();
-  })
+  }),
 );
 
 const subTracksMenu = menu.item("Time");
 
 // Add submenu items with correct key bindings
 subTracksMenu.addSubMenuItem(
-  menu.item("Set start time", () => {
-    const startTime = getTimePos(0);
-    core.osd(`Start time set to: ${startTime}`);
-  }, {keyBinding: "U"}) // Single key binding
+  menu.item(
+    "Set start time",
+    () => {
+      const startTime = getTimePos(0);
+      core.osd(`Start time set to: ${startTime}`);
+    },
+    { keyBinding: "U" },
+  ), // Single key binding
 );
 
 subTracksMenu.addSubMenuItem(
-  menu.item("Set end time", () => {
-    const endTime = getTimePos(1);
-    core.osd(`End time set to: ${endTime}`);
-  }, {keyBinding: "Meta+u"}) // Meta (Command) + u
+  menu.item(
+    "Set end time",
+    () => {
+      const endTime = getTimePos(1);
+      core.osd(`End time set to: ${endTime}`);
+    },
+    { keyBinding: "Meta+u" },
+  ), // Meta (Command) + u
 );
 
 subTracksMenu.addSubMenuItem(
-  menu.item("Set output filename", () => {
-    promptOutputFilename();
-  }, {keyBinding: "Shift+Meta+u"}) // Shift + Meta (Command) + u
+  menu.item(
+    "Set output filename",
+    () => {
+      promptOutputFilename();
+    },
+    { keyBinding: "Shift+Meta+u" },
+  ), // Shift + Meta (Command) + u
 );
-
 
 // Add the parent menu item to the main menu
 menu.addItem(subTracksMenu);
 // Periodic updates
 setInterval(updateVariables, 500);
 setInterval(postUpdate, 500);
-

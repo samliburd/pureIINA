@@ -1,4 +1,3 @@
-import './styles.css'
 // DOM Elements
 const firstClickPositionElement = document.getElementById("firstMousePos");
 const secondClickPositionElement = document.getElementById("secondMousePos");
@@ -8,7 +7,9 @@ const scaleElement = document.getElementById("scale");
 const rootElement = document.getElementById("root");
 const bodyElement = document.body; // Reference to the body element
 // bodyElement.style.backgroundColor = "rgba(255, 0, 0, 0.4)";
+const timeElement = document.getElementById("time");
 
+timeElement.innerText = "HELLO!"
 // Square Class to represent click markers
 class Square {
   constructor(color, size = 5) {

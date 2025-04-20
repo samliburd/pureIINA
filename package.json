@@ -6,12 +6,13 @@
   "scripts": {
     "serve-window": "parcel serve ui/window/index.html --dist-dir dist/ui/window",
     "serve-overlay": "parcel serve ui/overlay/index.html --dist-dir dist/ui/overlay",
-    "build": "rm -rf dist .parcel-cache && parcel build .",
+    "build": "rm -rf dist .parcel-cache && parcel build . --no-content-hash",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@parcel/optimizer-terser": "^2.14.4",
     "@parcel/transformer-sass": "^2.14.1",
     "iina-plugin-definition": "^0.99.2",
     "prettier": "^3.5.3",
