@@ -1,3 +1,5 @@
+import { logger, testFFMPEG } from "./helpers";
+
 const {
   standaloneWindow,
   overlay,
@@ -21,6 +23,7 @@ let secondClickPos = { x: 0, y: 0 };
 let isWaitingForSecondClick = false;
 let isHidden = true;
 let timeArr = ["00:00:00.000", secondsToISO(core.status.duration)];
+let outputDir;
 let outputFilename = ""; // Store the output filename globally
 let useCrop = false;
 let startTime = "00:00:00.000",
@@ -122,7 +125,7 @@ function toggleCrop() {
   core.osd(`Crop ${useCrop ? "enabled" : "disabled"}`);
 }
 
-async function copyToClipboard() {
+function generateCommand(direct = false) {
   // Ensure timeArr and normalizedCoordinates are defined and valid
   if (!timeArr[0] || !timeArr[1] || !normalizedCoordinates) {
     core.osd("Please set both start and end times and select a crop area.");
@@ -131,11 +134,31 @@ async function copyToClipboard() {
 
   // Replace spaces in the filename with backslash-escaped spaces
   const filename = core.status.url.replace("file://", "").replace(/\s/g, "\\ ");
-
+  if (direct) {
+    if (preferences.get("output_dir")) {
+      outputDir = preferences.get("output_dir");
+    } else {
+      outputDir = utils.chooseFile("Please select the output directory\n", {
+        chooseDir: true,
+      });
+    }
+    let finalOutputFilename = `${outputDir}/${outputFilename}`;
+    return {
+      args: `-ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}` : ""} -c:v libx264 -crf 17 -preset fast -c:a aac -map_metadata -1 -map_chapters -1 -movflags +faststart ${finalOutputFilename}`.split(
+        " ",
+      ),
+      outputFilename: finalOutputFilename,
+    };
+  }
   // Construct the ffmpeg command with preserved backslashes
-  const ffmpegCommand = `ffmpeg -ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf "crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}" \\` : "\\"}
+  else {
+    return `ffmpeg -ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf "crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}" \\` : "\\"}
 -c:v libx264 -crf 17 -preset fast -c:a aac -map_metadata -1 -map_chapters -1 -movflags +faststart ${outputFilename} && echo ${outputFilename}`;
+  }
+}
 
+async function copyToClipboard(command) {
+  const ffmpegCommand = generateCommand();
   // Ask the user for confirmation
   const userResponse = utils.ask(
     `Do you want to copy the following command to your clipboard?\n\n${ffmpegCommand}`,
@@ -246,25 +269,40 @@ subFFMPEGMenu.addSubMenuItem(
 );
 subFFMPEGMenu.addSubMenuItem(
   menu.item("Call ffmpeg", () => {
-    helpers.callFFMPEG();
+    let { args, outputFilename } = generateCommand(true);
+    let cleanedArgs = args.filter((entry) => entry !== "");
+    let executeCommand = utils.ask(
+      `Do you want to run this ffmpeg command:\n\nffmpeg ${cleanedArgs.join(" ")}`,
+    );
+    if (executeCommand) {
+      helpers.logger(`Processing ${filename} -> ${outputFilename}`);
+      helpers.callFFMPEG(cleanedArgs).then((result) => {
+        if (result.status === 0) {
+          helpers.logger(`Video successfully processed: ${outputFilename}`);
+          executeCommand = false;
+        }
+      });
+    }
   }), // Meta (Command) + u
 );
 subFFMPEGMenu.addSubMenuItem(
   menu.item("pwd", () => {
-    const path = utils.chooseFile("Please select a subtitle file", {
-      chooseDir: true,
-    });
-
-    (async () => {
-      const { status, stdout, stderr } = await utils.exec("/bin/bash", [
-        "-c",
-        "ls /Users/samliburd/",
-      ]);
-
-      // core.osd(stdout);
-      console.log(stdout);
-      // console.log(stderr);
-    })();
+    core.osd(generateCommand(true));
+    console.log(generateCommand(true));
+    // const path = utils.chooseFile("Please select a subtitle file", {
+    //   chooseDir: true,
+    // });
+    //
+    // (async () => {
+    //   const { status, stdout, stderr } = await utils.exec("/bin/bash", [
+    //     "-c",
+    //     "ls /Users/samliburd/",
+    //   ]);
+    //
+    //   // core.osd(stdout);
+    //   console.log(stdout);
+    //   // console.log(stderr);
+    // })();
   }), // Meta (Command) + u
 );
 menu.addItem(subFFMPEGMenu);

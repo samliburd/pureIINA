@@ -8,7 +8,7 @@ const BINARY_DIR_PATH = utils.resolvePath("@data/bin/");
 let FFMPEG_BINARY_PATH,
   helpTextShown = false;
 
-function logger(msg) {
+export function logger(msg) {
   console.log(msg);
   core.osd(msg);
 }
@@ -107,7 +107,7 @@ export async function unzip() {
   }
 }
 
-export async function callFFMPEG() {
+export async function testFFMPEG() {
   const inputFilename = core.status.url
     .replace("file://", "")
     .replace(/\s/g, "\\ ");
@@ -149,6 +149,25 @@ export async function callFFMPEG() {
     }
   } catch (error) {
     logger(`${stderr || error}`);
+  }
+}
+
+export async function callFFMPEG(options) {
+  const ffmpegOptions = ["-hide_banner", "-loglevel", "warning", "-y"];
+  console.log("\n\n\n\n\nOPTIONS:\n\n\n\n");
+  console.log([...ffmpegOptions, ...options]);
+  try {
+    const { status, stdout, stderr } = await utils.exec(
+      preferences.get("ffmpeg_path"),
+      [...ffmpegOptions, ...options],
+    );
+
+    console.log(stdout);
+    console.log(stderr);
+    return { status, stdout, stderr };
+  } catch (error) {
+    logger(`${stderr || error}`);
+    return { status: 1, stdout: "", stderr: error.stderr || error };
   }
 }
 
