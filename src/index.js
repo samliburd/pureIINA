@@ -244,6 +244,29 @@ subFFMPEGMenu.addSubMenuItem(
     core.osd(ffPath);
   }), // Meta (Command) + u
 );
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Call ffmpeg", () => {
+    helpers.callFFMPEG();
+  }), // Meta (Command) + u
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("pwd", () => {
+    const path = utils.chooseFile("Please select a subtitle file", {
+      chooseDir: true,
+    });
+
+    (async () => {
+      const { status, stdout, stderr } = await utils.exec("/bin/bash", [
+        "-c",
+        "ls /Users/samliburd/",
+      ]);
+
+      // core.osd(stdout);
+      console.log(stdout);
+      // console.log(stderr);
+    })();
+  }), // Meta (Command) + u
+);
 menu.addItem(subFFMPEGMenu);
 const subDownloadMenu = menu.item("Download");
 subDownloadMenu.addSubMenuItem(
@@ -263,8 +286,9 @@ subDownloadMenu.addSubMenuItem(
     helpers.findBinary();
   }), // Meta (Command) + u
 );
-menu.addItem(subDownloadMenu);
-menu.addItem(
+// menu.addItem(subDownloadMenu);
+const subOptionsMenu = menu.item("Options");
+subOptionsMenu.addSubMenuItem(
   menu.item(
     "Toggle crop",
     () => {
@@ -273,7 +297,7 @@ menu.addItem(
     { keyBinding: "Meta+T" },
   ),
 );
-menu.addItem(
+subOptionsMenu.addSubMenuItem(
   menu.item(
     "Set output filename",
     () => {
@@ -282,7 +306,7 @@ menu.addItem(
     { keyBinding: "Shift+Meta+u" },
   ), // Shift + Meta (Command) + u
 );
-
+menu.addItem(subOptionsMenu);
 // Add the parent menu item to the main menu
 
 // Periodic updates

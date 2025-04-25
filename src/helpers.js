@@ -1,3 +1,5 @@
+import { stderr } from "process";
+
 const { core, console, http, utils, exec, file, preferences } = iina;
 
 const FFMPEG_URL = "https://evermeet.cx/ffmpeg/get/ffmpeg/zip";
@@ -32,6 +34,7 @@ export async function initFFMPEG() {
   helpTextShown = true;
   if (file.exists(preferences.get("ffmpeg_path"))) {
     FFMPEG_BINARY_PATH = preferences.get("ffmpeg_path");
+    logger(`ffmpeg found at ${FFMPEG_BINARY_PATH}`);
   } else if (!file.exists(preferences.get("ffmpeg_path"))) {
     const userPath = utils.prompt(
       `Please enter the PATH to ffmpeg.
@@ -101,6 +104,51 @@ export async function unzip() {
   } catch (error) {
     // If there's an exception during the command execution, display the error
     logger(`Unzip failed: ${error.message}`);
+  }
+}
+
+export async function callFFMPEG() {
+  const inputFilename = core.status.url
+    .replace("file://", "")
+    .replace(/\s/g, "\\ ");
+  logger(inputFilename);
+  let outputDir;
+  if (preferences.get("output_dir")) {
+    outputDir = preferences.get("output_dir");
+  } else {
+    outputDir = utils.chooseFile("Please select the output directory\n", {
+      chooseDir: true,
+    });
+  }
+  console.log(`Output dir: ${outputDir}`);
+  let outputFilename = utils.prompt(
+    "Enter output filename (without extension):\n",
+  );
+  console.log(`Output filename: ${outputFilename}`);
+  let finalOutputName = `${outputDir}/${outputFilename}.mp4`;
+  try {
+    logger(`Processing ${inputFilename} -> ${finalOutputName}`);
+    const { status, stdout, stderr } = await utils.exec(
+      preferences.get("ffmpeg_path"),
+      [
+        "-hide_banner",
+        "-loglevel",
+        "warning",
+        "-i",
+        inputFilename,
+        "-vf",
+        "scale=1280:720",
+        `${finalOutputName}`,
+        "-y",
+      ],
+    );
+    console.log(stdout);
+    console.log(stderr);
+    if (status === 0) {
+      logger(`Video successfully processed: ${finalOutputName}`);
+    }
+  } catch (error) {
+    logger(`${stderr || error}`);
   }
 }
 
