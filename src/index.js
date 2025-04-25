@@ -1,5 +1,15 @@
-const { standaloneWindow, overlay, console, menu, core, input, utils } = iina;
-
+const {
+  standaloneWindow,
+  overlay,
+  console,
+  menu,
+  core,
+  input,
+  utils,
+  file,
+  preferences,
+} = iina;
+import * as helpers from "./helpers";
 // Initialize overlay
 overlay.loadFile("dist/ui/overlay/index.html");
 overlay.setClickable(true);
@@ -13,8 +23,8 @@ let isHidden = true;
 let timeArr = ["00:00:00.000", secondsToISO(core.status.duration)];
 let outputFilename = ""; // Store the output filename globally
 let useCrop = false;
-let startTime = "00:00:00.000";
-let endTime = secondsToISO(core.status.duration);
+let startTime = "00:00:00.000",
+  endTime = secondsToISO(core.status.duration);
 const regex = /\s/g;
 const filename = core.status.url.replace("file://", "").replace(regex, "\\ ");
 
@@ -114,7 +124,6 @@ function toggleCrop() {
 
 async function copyToClipboard() {
   // Ensure timeArr and normalizedCoordinates are defined and valid
-  // if (!timeArr[0] || !timeArr[1] || !normalizedCoordinates) {
   if (!timeArr[0] || !timeArr[1] || !normalizedCoordinates) {
     core.osd("Please set both start and end times and select a crop area.");
     return;
@@ -222,8 +231,39 @@ subTimeMenu.addSubMenuItem(
     { keyBinding: "Meta+u" },
   ), // Meta (Command) + u
 );
-
 menu.addItem(subTimeMenu);
+const subFFMPEGMenu = menu.item("ffmpeg");
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Init", () => {
+    helpers.initFFMPEG();
+  }), // Meta (Command) + u
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Test prefs", () => {
+    const ffPath = preferences.get("ffmpeg_path");
+    core.osd(ffPath);
+  }), // Meta (Command) + u
+);
+menu.addItem(subFFMPEGMenu);
+const subDownloadMenu = menu.item("Download");
+subDownloadMenu.addSubMenuItem(
+  menu.item("Download", () => {
+    // file.write("@data/mynewfile.txt", "hello");
+    helpers.downloadFFMPEG();
+  }), // Meta (Command) + u
+);
+subDownloadMenu.addSubMenuItem(
+  menu.item("Unzip", () => {
+    helpers.unzip();
+  }), // Meta (Command) + u
+);
+subDownloadMenu.addSubMenuItem(
+  menu.item("Find binary", () => {
+    // file.write("@data/mynewfile.txt", "hello");
+    helpers.findBinary();
+  }), // Meta (Command) + u
+);
+menu.addItem(subDownloadMenu);
 menu.addItem(
   menu.item(
     "Toggle crop",
