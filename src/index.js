@@ -1,7 +1,14 @@
-import { getFfmpegPath } from "./helpers";
-
-const { standaloneWindow, overlay, console, menu, core, input, utils, file } =
-  iina;
+const {
+  standaloneWindow,
+  overlay,
+  console,
+  menu,
+  core,
+  input,
+  utils,
+  file,
+  preferences,
+} = iina;
 import * as helpers from "./helpers";
 // Initialize overlay
 overlay.loadFile("dist/ui/overlay/index.html");
@@ -220,15 +227,20 @@ subTimeMenu.addSubMenuItem(
   ), // Meta (Command) + u
 );
 menu.addItem(subTimeMenu);
+const subFFMPEGMenu = menu.item("ffmpeg");
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Init", () => {
+    helpers.initFFMPEG();
+  }), // Meta (Command) + u
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Test prefs", () => {
+    const ffPath = preferences.get("ffmpeg_path");
+    core.osd(ffPath);
+  }), // Meta (Command) + u
+);
+menu.addItem(subFFMPEGMenu);
 const subDownloadMenu = menu.item("Download");
-// subDownloadMenu.addSubMenuItem(
-//   menu.item("Log time", () => {
-//     // file.write("@data/mynewfile.txt", "hello");
-//     downloadFFMPEG();
-//     findBinary();
-//   }), // Meta (Command) + u
-// );
-
 subDownloadMenu.addSubMenuItem(
   menu.item("Download", () => {
     // file.write("@data/mynewfile.txt", "hello");
@@ -237,22 +249,7 @@ subDownloadMenu.addSubMenuItem(
 );
 subDownloadMenu.addSubMenuItem(
   menu.item("Unzip", () => {
-    const ffmpegZip = utils.resolvePath("@data/ffmpeg.7z");
-    const binDir = utils.resolvePath("@data/bin");
-    // (async () => {
-    //   const { status, stdout, stderr } = await utils.exec(
-    //     "/opt/homebrew/bin/7z",
-    //     ["e", `${ffmpegZip}`, `-o${binDir}/ffmpeg`],
-    //   );
-    //   core.osd(stderr);
-    //   console.log(stderr);
-    // })();
     helpers.unzip();
-  }), // Meta (Command) + u
-);
-subDownloadMenu.addSubMenuItem(
-  menu.item("Init", () => {
-    helpers.getFfmpegPath();
   }), // Meta (Command) + u
 );
 subDownloadMenu.addSubMenuItem(
