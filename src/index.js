@@ -10,11 +10,11 @@ let firstClickPos = { x: 0, y: 0 };
 let secondClickPos = { x: 0, y: 0 };
 let isWaitingForSecondClick = false;
 let isHidden = true;
-let timeArr = [];
+let timeArr = ["00:00:00.000", secondsToISO(core.status.duration)];
 let outputFilename = ""; // Store the output filename globally
 let useCrop = false;
-let startTime = "00:00:00.000",
-  endTime = "00:00:00.000";
+let startTime = "00:00:00.000";
+let endTime = secondsToISO(core.status.duration);
 const regex = /\s/g;
 const filename = core.status.url.replace("file://", "").replace(regex, "\\ ");
 
@@ -90,9 +90,14 @@ function postUpdate() {
   });
 }
 
+function secondsToISO(time) {
+  return new Date(time * 1000).toISOString().substring(11, 23);
+}
+
 function getTimePos(index) {
   const timePos = core.status.position;
-  timeArr[index] = new Date(timePos * 1000).toISOString().substring(11, 23);
+  // timeArr[index] = new Date(timePos * 1000).toISOString().substring(11, 23);
+  timeArr[index] = secondsToISO(timePos);
   return timeArr[index];
 }
 
@@ -109,6 +114,7 @@ function toggleCrop() {
 
 async function copyToClipboard() {
   // Ensure timeArr and normalizedCoordinates are defined and valid
+  // if (!timeArr[0] || !timeArr[1] || !normalizedCoordinates) {
   if (!timeArr[0] || !timeArr[1] || !normalizedCoordinates) {
     core.osd("Please set both start and end times and select a crop area.");
     return;
@@ -216,11 +222,7 @@ subTimeMenu.addSubMenuItem(
     { keyBinding: "Meta+u" },
   ), // Meta (Command) + u
 );
-subTimeMenu.addSubMenuItem(
-  menu.item("Log time", () => {
-    core.osd(`Start time: ${startTime} End time: ${endTime}`);
-  }), // Meta (Command) + u
-);
+
 menu.addItem(subTimeMenu);
 menu.addItem(
   menu.item(
