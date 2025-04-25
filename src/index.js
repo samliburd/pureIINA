@@ -20,11 +20,11 @@ let firstClickPos = { x: 0, y: 0 };
 let secondClickPos = { x: 0, y: 0 };
 let isWaitingForSecondClick = false;
 let isHidden = true;
-let timeArr = [];
+let timeArr = ["00:00:00.000", secondsToISO(core.status.duration)];
 let outputFilename = ""; // Store the output filename globally
 let useCrop = false;
 let startTime = "00:00:00.000",
-  endTime = "00:00:00.000";
+  endTime = secondsToISO(core.status.duration);
 const regex = /\s/g;
 const filename = core.status.url.replace("file://", "").replace(regex, "\\ ");
 
@@ -100,9 +100,14 @@ function postUpdate() {
   });
 }
 
+function secondsToISO(time) {
+  return new Date(time * 1000).toISOString().substring(11, 23);
+}
+
 function getTimePos(index) {
   const timePos = core.status.position;
-  timeArr[index] = new Date(timePos * 1000).toISOString().substring(11, 23);
+  // timeArr[index] = new Date(timePos * 1000).toISOString().substring(11, 23);
+  timeArr[index] = secondsToISO(timePos);
   return timeArr[index];
 }
 
