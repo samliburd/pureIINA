@@ -13,6 +13,8 @@ let isHidden = true;
 let timeArr = [];
 let outputFilename = ""; // Store the output filename globally
 let useCrop = false;
+let startTime = "00:00:00.000",
+  endTime = "00:00:00.000";
 const regex = /\s/g;
 const filename = core.status.url.replace("file://", "").replace(regex, "\\ ");
 
@@ -174,53 +176,62 @@ input.onKeyDown("alt+k", async () => {
     core.osd("Please select a crop before continuing.");
   }
 });
+const subOverlayMenu = menu.item("Overlay");
 
 // Menu items
-menu.addItem(
+subOverlayMenu.addSubMenuItem(
   menu.item("Show Video Overlay", () => {
     core.osd("Show Video Overlay");
     overlay.show();
   }),
 );
 
-menu.addItem(
+subOverlayMenu.addSubMenuItem(
   menu.item("Hide Video Overlay", () => {
     overlay.hide();
   }),
 );
-
-menu.addItem(
-  menu.item("Toggle crop", () => {
-    toggleCrop();
-  }),
-);
-
-const subTracksMenu = menu.item("Time");
+menu.addItem(subOverlayMenu);
+const subTimeMenu = menu.item("Time");
 
 // Add submenu items with correct key bindings
-subTracksMenu.addSubMenuItem(
+subTimeMenu.addSubMenuItem(
   menu.item(
     "Set start time",
     () => {
-      const startTime = getTimePos(0);
+      startTime = getTimePos(0);
       core.osd(`Start time set to: ${startTime}`);
     },
     { keyBinding: "U" },
   ), // Single key binding
 );
 
-subTracksMenu.addSubMenuItem(
+subTimeMenu.addSubMenuItem(
   menu.item(
     "Set end time",
     () => {
-      const endTime = getTimePos(1);
+      endTime = getTimePos(1);
       core.osd(`End time set to: ${endTime}`);
     },
     { keyBinding: "Meta+u" },
   ), // Meta (Command) + u
 );
-
-subTracksMenu.addSubMenuItem(
+subTimeMenu.addSubMenuItem(
+  menu.item("Log time", () => {
+    core.osd(`Start time: ${startTime} End time: ${endTime}`);
+  }), // Meta (Command) + u
+);
+menu.addItem(subTimeMenu);
+menu.addItem(
+  menu.item(
+    "Toggle crop",
+    () => {
+      toggleCrop();
+    },
+    { keyBinding: "Meta+T" },
+  ),
+);
+menu.addItem(
   menu.item(
     "Set output filename",
     () => {
@@ -231,7 +242,7 @@ subTracksMenu.addSubMenuItem(
 );
 
 // Add the parent menu item to the main menu
-menu.addItem(subTracksMenu);
+
 // Periodic updates
 setInterval(updateVariables, 500);
 setInterval(postUpdate, 500);
