@@ -1,3 +1,5 @@
+import { getFfmpegPath } from "./helpers";
+
 const { standaloneWindow, overlay, console, menu, core, input, utils, file } =
   iina;
 import * as helpers from "./helpers";
@@ -249,8 +251,8 @@ subDownloadMenu.addSubMenuItem(
   }), // Meta (Command) + u
 );
 subDownloadMenu.addSubMenuItem(
-  menu.item("Resolve", () => {
-    helpers.getPath();
+  menu.item("Init", () => {
+    helpers.getFfmpegPath();
   }), // Meta (Command) + u
 );
 subDownloadMenu.addSubMenuItem(
