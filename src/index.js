@@ -1,6 +1,6 @@
 const { standaloneWindow, overlay, console, menu, core, input, utils, file } =
   iina;
-import { downloadFFMPEG, findBinary, makeExecutable } from "./helpers";
+import * as helpers from "./helpers";
 // Initialize overlay
 overlay.loadFile("dist/ui/overlay/index.html");
 overlay.setClickable(true);
@@ -217,49 +217,49 @@ subTimeMenu.addSubMenuItem(
     { keyBinding: "Meta+u" },
   ), // Meta (Command) + u
 );
-// subTimeMenu.addSubMenuItem(
+menu.addItem(subTimeMenu);
+const subDownloadMenu = menu.item("Download");
+// subDownloadMenu.addSubMenuItem(
 //   menu.item("Log time", () => {
 //     // file.write("@data/mynewfile.txt", "hello");
 //     downloadFFMPEG();
 //     findBinary();
 //   }), // Meta (Command) + u
 // );
-subTimeMenu.addSubMenuItem(
+
+subDownloadMenu.addSubMenuItem(
   menu.item("Download", () => {
     // file.write("@data/mynewfile.txt", "hello");
-    downloadFFMPEG();
+    helpers.downloadFFMPEG();
   }), // Meta (Command) + u
 );
-subTimeMenu.addSubMenuItem(
-  menu.item("Resolve", () => {
-    const resolvedPath = utils.resolvePath("@data/ffmpeg");
+subDownloadMenu.addSubMenuItem(
+  menu.item("Unzip", () => {
+    const ffmpegZip = utils.resolvePath("@data/ffmpeg.7z");
+    const binDir = utils.resolvePath("@data/bin");
     // (async () => {
-    //   const { status, stdout, stderr } = await utils.exec("/bin/chmod", [
-    //     "+x",
-    //     resolvedPath,
-    //   ]);
+    //   const { status, stdout, stderr } = await utils.exec(
+    //     "/opt/homebrew/bin/7z",
+    //     ["e", `${ffmpegZip}`, `-o${binDir}/ffmpeg`],
+    //   );
+    //   core.osd(stderr);
+    //   console.log(stderr);
     // })();
-    makeExecutable()
-      .then(({ status, stdout, stderr }) => {
-        if (status === 0) {
-          core.osd(`chmod succeeded: ${stdout}`);
-        } else {
-          core.osd(`chmod failed: ${stderr}`);
-        }
-      })
-      .catch((err) => {
-        core.osd(`Error running chmod: ${err}`);
-      });
-    core.osd(resolvedPath);
+    helpers.unzip();
   }), // Meta (Command) + u
 );
-subTimeMenu.addSubMenuItem(
+subDownloadMenu.addSubMenuItem(
+  menu.item("Resolve", () => {
+    helpers.getPath();
+  }), // Meta (Command) + u
+);
+subDownloadMenu.addSubMenuItem(
   menu.item("Find binary", () => {
     // file.write("@data/mynewfile.txt", "hello");
-    findBinary();
+    helpers.findBinary();
   }), // Meta (Command) + u
 );
-menu.addItem(subTimeMenu);
+menu.addItem(subDownloadMenu);
 menu.addItem(
   menu.item(
     "Toggle crop",
