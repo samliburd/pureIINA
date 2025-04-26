@@ -17,10 +17,35 @@ export async function downloadFFMPEG() {
   try {
     await http.download(FFMPEG_URL, FFMPEG_ZIP_PATH);
     console.log(`ffmpeg downloaded to ${FFMPEG_ZIP_PATH}`);
-    return null;
+    return true;
   } catch (e) {
     console.log(e);
     return e.toString();
+  }
+}
+
+export async function unzip() {
+  try {
+    // Execute the unzip command
+    const { status, stdout, stderr } = await utils.exec("/usr/bin/unzip", [
+      "-o",
+      `${FFMPEG_ZIP_PATH}`,
+      "-d",
+      `${BINARY_DIR_PATH}`,
+    ]);
+
+    // Check the exit status of the command
+    if (status === 0) {
+      // If the command was successful, display success message
+      logger(`ffmpeg extracted to ${BINARY_DIR_PATH}/ffmpeg`);
+    } else {
+      // If there's a non-zero status, consider it an error and display stderr
+      // logger(`Error extracting ffmpeg: ${stderr || stdout}`);
+    }
+    return status;
+  } catch (error) {
+    // If there's an exception during the command execution, display the error
+    logger(`Unzip failed: ${error.message}`);
   }
 }
 
@@ -80,30 +105,6 @@ Common locations include:
     } else {
       logger("Failed to locate ffmpeg, path not saved to preferences");
     }
-  }
-}
-
-export async function unzip() {
-  try {
-    // Execute the unzip command
-    const { status, stdout, stderr } = await utils.exec("/usr/bin/unzip", [
-      "-o",
-      `${FFMPEG_ZIP_PATH}`,
-      "-d",
-      `${BINARY_DIR_PATH}`,
-    ]);
-
-    // Check the exit status of the command
-    if (status === 0) {
-      // If the command was successful, display success message
-      logger(`ffmpeg extracted to ${BINARY_DIR_PATH}/ffmpeg`);
-    } else {
-      // If there's a non-zero status, consider it an error and display stderr
-      logger(`Error extracting ffmpeg: ${stderr || stdout}`);
-    }
-  } catch (error) {
-    // If there's an exception during the command execution, display the error
-    logger(`Unzip failed: ${error.message}`);
   }
 }
 

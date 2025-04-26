@@ -1,5 +1,3 @@
-import { logger, testFFMPEG } from "./helpers";
-
 const {
   standaloneWindow,
   overlay,
@@ -119,6 +117,11 @@ function promptOutputFilename() {
   outputFilename = `${fn}.mp4`;
   return outputFilename;
 }
+function promptOutputDir() {
+  return utils.chooseFile("Please select the output directory\n", {
+    chooseDir: true,
+  });
+}
 
 function toggleCrop() {
   useCrop = !useCrop;
@@ -230,10 +233,10 @@ subOverlayMenu.addSubMenuItem(
   }),
 );
 menu.addItem(subOverlayMenu);
-const subTimeMenu = menu.item("Time");
-
+// const subTimeMenu = menu.item("Time");
+const subOptionsMenu = menu.item("Options");
 // Add submenu items with correct key bindings
-subTimeMenu.addSubMenuItem(
+subOptionsMenu.addSubMenuItem(
   menu.item(
     "Set start time",
     () => {
@@ -244,7 +247,7 @@ subTimeMenu.addSubMenuItem(
   ), // Single key binding
 );
 
-subTimeMenu.addSubMenuItem(
+subOptionsMenu.addSubMenuItem(
   menu.item(
     "Set end time",
     () => {
@@ -254,21 +257,69 @@ subTimeMenu.addSubMenuItem(
     { keyBinding: "Meta+u" },
   ), // Meta (Command) + u
 );
-menu.addItem(subTimeMenu);
-const subFFMPEGMenu = menu.item("ffmpeg");
+subOptionsMenu.addSubMenuItem(
+  menu.item(
+    "Set output directory",
+    () => {
+      promptOutputFilename();
+    },
+    { keyBinding: "Shift+Meta+u" },
+  ), // Shift + Meta (Command) + u
+);
+subOptionsMenu.addSubMenuItem(
+  menu.item(
+    "Set output filename",
+    () => {
+      promptOutputFilename();
+    },
+    { keyBinding: "Shift+Meta+u" },
+  ), // Shift + Meta (Command) + u
+);
+subOptionsMenu.addSubMenuItem(
+  menu.item(
+    "Toggle crop",
+    () => {
+      toggleCrop();
+    },
+    { keyBinding: "Meta+T" },
+  ),
+);
+menu.addItem(subOptionsMenu);
+const subFFMPEGMenu = menu.item("FFMPEG");
+
 subFFMPEGMenu.addSubMenuItem(
-  menu.item("Init", () => {
+  menu.item("Initialise ffmpeg", () => {
     helpers.initFFMPEG();
   }), // Meta (Command) + u
 );
 subFFMPEGMenu.addSubMenuItem(
-  menu.item("Test prefs", () => {
+  menu.item("Download ffmpeg", () => {
+    helpers.downloadFFMPEG().then((result) => {
+      if (result === true) {
+        console.log("Now running the next step...");
+        helpers.unzip().then((result) => {
+          helpers.logger(`Download and extract successful.`);
+        });
+      } else {
+        console.error(`Download failed: ${result}`);
+      }
+    });
+  }),
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Show ffmpeg path", () => {
     const ffPath = preferences.get("ffmpeg_path");
     core.osd(ffPath);
   }), // Meta (Command) + u
 );
 subFFMPEGMenu.addSubMenuItem(
-  menu.item("Call ffmpeg", () => {
+  menu.item("Show command", () => {
+    core.osd(generateCommand(true));
+    console.log(generateCommand(true));
+  }),
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Run ffmpeg", () => {
     let { args, outputFilename } = generateCommand(true);
     let cleanedArgs = args.filter((entry) => entry !== "");
     let executeCommand = utils.ask(
@@ -285,66 +336,7 @@ subFFMPEGMenu.addSubMenuItem(
     }
   }), // Meta (Command) + u
 );
-subFFMPEGMenu.addSubMenuItem(
-  menu.item("pwd", () => {
-    core.osd(generateCommand(true));
-    console.log(generateCommand(true));
-    // const path = utils.chooseFile("Please select a subtitle file", {
-    //   chooseDir: true,
-    // });
-    //
-    // (async () => {
-    //   const { status, stdout, stderr } = await utils.exec("/bin/bash", [
-    //     "-c",
-    //     "ls /Users/samliburd/",
-    //   ]);
-    //
-    //   // core.osd(stdout);
-    //   console.log(stdout);
-    //   // console.log(stderr);
-    // })();
-  }), // Meta (Command) + u
-);
 menu.addItem(subFFMPEGMenu);
-const subDownloadMenu = menu.item("Download");
-subDownloadMenu.addSubMenuItem(
-  menu.item("Download", () => {
-    // file.write("@data/mynewfile.txt", "hello");
-    helpers.downloadFFMPEG();
-  }), // Meta (Command) + u
-);
-subDownloadMenu.addSubMenuItem(
-  menu.item("Unzip", () => {
-    helpers.unzip();
-  }), // Meta (Command) + u
-);
-subDownloadMenu.addSubMenuItem(
-  menu.item("Find binary", () => {
-    // file.write("@data/mynewfile.txt", "hello");
-    helpers.findBinary();
-  }), // Meta (Command) + u
-);
-// menu.addItem(subDownloadMenu);
-const subOptionsMenu = menu.item("Options");
-subOptionsMenu.addSubMenuItem(
-  menu.item(
-    "Toggle crop",
-    () => {
-      toggleCrop();
-    },
-    { keyBinding: "Meta+T" },
-  ),
-);
-subOptionsMenu.addSubMenuItem(
-  menu.item(
-    "Set output filename",
-    () => {
-      promptOutputFilename();
-    },
-    { keyBinding: "Shift+Meta+u" },
-  ), // Shift + Meta (Command) + u
-);
-menu.addItem(subOptionsMenu);
 // Add the parent menu item to the main menu
 
 // Periodic updates
