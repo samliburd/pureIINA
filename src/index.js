@@ -21,7 +21,7 @@ let secondClickPos = { x: 0, y: 0 };
 let isWaitingForSecondClick = false;
 let isHidden = true;
 let timeArr = ["00:00:00.000", secondsToISO(core.status.duration)];
-let outputDir;
+let outputDir = preferences.get("output_dir");
 let outputFilename = ""; // Store the output filename globally
 let useCrop = false;
 let startTime = "00:00:00.000",
@@ -117,10 +117,29 @@ function promptOutputFilename() {
   outputFilename = `${fn}.mp4`;
   return outputFilename;
 }
-function promptOutputDir() {
-  return utils.chooseFile("Please select the output directory\n", {
-    chooseDir: true,
-  });
+
+async function promptOutputDir() {
+  try {
+    // @ts-ignore - chooseFile actually returns a Promise despite what the types say
+    const tempOutput = await utils.chooseFile(
+      "Please select the output directory\n",
+      {
+        chooseDir: true,
+      },
+    );
+
+    if (tempOutput) {
+      outputDir = tempOutput;
+      core.osd(`Output directory set to: ${outputDir}`);
+    } else {
+      core.osd("No directory selected");
+    }
+
+    return tempOutput;
+  } catch (error) {
+    core.osd(`Error selecting directory: ${error}`);
+    return null;
+  }
 }
 
 function toggleCrop() {
@@ -138,13 +157,28 @@ function generateCommand(direct = false) {
   // Replace spaces in the filename with backslash-escaped spaces
   const filename = core.status.url.replace("file://", "").replace(/\s/g, "\\ ");
   if (direct) {
-    if (preferences.get("output_dir")) {
-      outputDir = preferences.get("output_dir");
-    } else {
-      outputDir = utils.chooseFile("Please select the output directory\n", {
-        chooseDir: true,
-      });
+    // Check if outputDir is set, if not use from preferences or prompt
+    // if (outputDir) {
+    //   if (preferences.get("output_dir") !== outputDir) {
+    //     outputDir = preferences.get("output_dir");
+    //   } else {
+    //     outputDir = promptOutputDir();
+    //     if (!outputDir) {
+    //       core.osd("Output directory not selected. Operation cancelled.");
+    //       return null;
+    //     }
+    //   }
+    // }
+
+    // Ensure we have an output filename
+    if (!outputFilename) {
+      outputFilename = promptOutputFilename();
+      if (!outputFilename) {
+        core.osd("Output filename not provided. Operation cancelled.");
+        return null;
+      }
     }
+
     let finalOutputFilename = `${outputDir}/${outputFilename}`;
     return {
       args: `-ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}` : ""} -c:v libx264 -crf 17 -preset fast -c:a aac -map_metadata -1 -map_chapters -1 -movflags +faststart ${finalOutputFilename}`.split(
@@ -258,13 +292,9 @@ subOptionsMenu.addSubMenuItem(
   ), // Meta (Command) + u
 );
 subOptionsMenu.addSubMenuItem(
-  menu.item(
-    "Set output directory",
-    () => {
-      promptOutputFilename();
-    },
-    { keyBinding: "Shift+Meta+u" },
-  ), // Shift + Meta (Command) + u
+  menu.item("Set output directory", () => {
+    promptOutputDir();
+  }),
 );
 subOptionsMenu.addSubMenuItem(
   menu.item(
@@ -286,7 +316,6 @@ subOptionsMenu.addSubMenuItem(
 );
 menu.addItem(subOptionsMenu);
 const subFFMPEGMenu = menu.item("FFMPEG");
-
 subFFMPEGMenu.addSubMenuItem(
   menu.item("Initialise ffmpeg", () => {
     helpers.initFFMPEG();

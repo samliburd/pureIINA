@@ -108,51 +108,6 @@ Common locations include:
   }
 }
 
-export async function testFFMPEG() {
-  const inputFilename = core.status.url
-    .replace("file://", "")
-    .replace(/\s/g, "\\ ");
-  logger(inputFilename);
-  let outputDir;
-  if (preferences.get("output_dir")) {
-    outputDir = preferences.get("output_dir");
-  } else {
-    outputDir = utils.chooseFile("Please select the output directory\n", {
-      chooseDir: true,
-    });
-  }
-  console.log(`Output dir: ${outputDir}`);
-  let outputFilename = utils.prompt(
-    "Enter output filename (without extension):\n",
-  );
-  console.log(`Output filename: ${outputFilename}`);
-  let finalOutputName = `${outputDir}/${outputFilename}.mp4`;
-  try {
-    logger(`Processing ${inputFilename} -> ${finalOutputName}`);
-    const { status, stdout, stderr } = await utils.exec(
-      preferences.get("ffmpeg_path"),
-      [
-        "-hide_banner",
-        "-loglevel",
-        "warning",
-        "-i",
-        inputFilename,
-        "-vf",
-        "scale=1280:720",
-        `${finalOutputName}`,
-        "-y",
-      ],
-    );
-    console.log(stdout);
-    console.log(stderr);
-    if (status === 0) {
-      logger(`Video successfully processed: ${finalOutputName}`);
-    }
-  } catch (error) {
-    logger(`${stderr || error}`);
-  }
-}
-
 export async function callFFMPEG(options) {
   const ffmpegOptions = ["-hide_banner", "-loglevel", "warning", "-y"];
   console.log("\n\n\n\n\nOPTIONS:\n\n\n\n");
