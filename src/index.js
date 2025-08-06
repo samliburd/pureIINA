@@ -8,6 +8,7 @@ const {
   utils,
   file,
   preferences,
+  playlist,
 } = iina;
 import * as helpers from "./helpers";
 // Initialize overlay
@@ -216,6 +217,34 @@ async function copyToClipboard(command) {
     core.osd("User clicked Cancel");
   }
 }
+async function listFiles() {
+  const playlistDir = await utils.chooseFile("Select playlist directory", {
+    chooseDir: true,
+  });
+  const { status, stdout, stderr } = await utils.exec("/bin/bash", [
+    "-c",
+    `ls ${playlistDir}`,
+  ]);
+  const filesArray = stdout.split("\n");
+  const videoFiles = filesArray
+    .filter((file) =>
+      file.match(
+        /[-\w\s\.]+\.(mp4|webm|mkv|avi|m4v|mov|flv|ogv|3gp|wmv|mts|m2ts|ts)/gim,
+      ),
+    )
+    .map((file) => {
+      return `${playlistDir}/${file}`;
+    });
+  // for (const [index, file] of videoFiles.entries()) {
+  //   playlist.add(file, index);
+  // }
+  videoFiles.reverse().forEach((file) => {
+    playlist.add(file);
+  });
+  // console.log(playlist.list());
+  console.log(typeof playlist.list);
+  // console.log(`\n\n\nDIRFILES: ${stdout}\n\n\n`);
+}
 
 // Event listeners
 input.onMouseDown(input.MOUSE, () => {
@@ -252,6 +281,11 @@ input.onKeyDown("alt+k", async () => {
   }
 });
 const subOverlayMenu = menu.item("Overlay");
+subOverlayMenu.addSubMenuItem(
+  menu.item("List files", () => {
+    listFiles();
+  }),
+);
 
 // Menu items
 subOverlayMenu.addSubMenuItem(
@@ -348,22 +382,26 @@ subFFMPEGMenu.addSubMenuItem(
   }),
 );
 subFFMPEGMenu.addSubMenuItem(
-  menu.item("Run ffmpeg", () => {
-    let { args, outputFilename } = generateCommand(true);
-    let cleanedArgs = args.filter((entry) => entry !== "");
-    let executeCommand = utils.ask(
-      `Do you want to run this ffmpeg command:\n\nffmpeg ${cleanedArgs.join(" ")}`,
-    );
-    if (executeCommand) {
-      helpers.logger(`Processing ${filename} -> ${outputFilename}`);
-      helpers.callFFMPEG(cleanedArgs).then((result) => {
-        if (result.status === 0) {
-          helpers.logger(`Video successfully processed: ${outputFilename}`);
-          executeCommand = false;
-        }
-      });
-    }
-  }), // Meta (Command) + u
+  menu.item(
+    "Run ffmpeg",
+    () => {
+      let { args, outputFilename } = generateCommand(true);
+      let cleanedArgs = args.filter((entry) => entry !== "");
+      let executeCommand = utils.ask(
+        `Do you want to run this ffmpeg command:\n\nffmpeg ${cleanedArgs.join(" ")}`,
+      );
+      if (executeCommand) {
+        helpers.logger(`Processing ${filename} -> ${outputFilename}`);
+        helpers.callFFMPEG(cleanedArgs).then((result) => {
+          if (result.status === 0) {
+            helpers.logger(`Video successfully processed: ${outputFilename}`);
+            executeCommand = false;
+          }
+        });
+      }
+    },
+    { keyBinding: "Command+Shift+R" },
+  ), // Meta (Command) + u
 );
 menu.addItem(subFFMPEGMenu);
 // Add the parent menu item to the main menu
