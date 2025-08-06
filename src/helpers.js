@@ -8,7 +8,7 @@ const BINARY_DIR_PATH = utils.resolvePath("@data/bin/");
 let FFMPEG_BINARY_PATH,
   helpTextShown = false;
 
-function logger(msg) {
+export function logger(msg) {
   console.log(msg);
   core.osd(msg);
 }
@@ -17,10 +17,35 @@ export async function downloadFFMPEG() {
   try {
     await http.download(FFMPEG_URL, FFMPEG_ZIP_PATH);
     console.log(`ffmpeg downloaded to ${FFMPEG_ZIP_PATH}`);
-    return null;
+    return true;
   } catch (e) {
     console.log(e);
     return e.toString();
+  }
+}
+
+export async function unzip() {
+  try {
+    // Execute the unzip command
+    const { status, stdout, stderr } = await utils.exec("/usr/bin/unzip", [
+      "-o",
+      `${FFMPEG_ZIP_PATH}`,
+      "-d",
+      `${BINARY_DIR_PATH}`,
+    ]);
+
+    // Check the exit status of the command
+    if (status === 0) {
+      // If the command was successful, display success message
+      logger(`ffmpeg extracted to ${BINARY_DIR_PATH}/ffmpeg`);
+    } else {
+      // If there's a non-zero status, consider it an error and display stderr
+      // logger(`Error extracting ffmpeg: ${stderr || stdout}`);
+    }
+    return status;
+  } catch (error) {
+    // If there's an exception during the command execution, display the error
+    logger(`Unzip failed: ${error.message}`);
   }
 }
 
@@ -83,72 +108,22 @@ Common locations include:
   }
 }
 
-export async function unzip() {
+export async function callFFMPEG(options) {
+  const ffmpegOptions = ["-hide_banner", "-loglevel", "warning", "-y"];
+  console.log("\n\n\n\n\nOPTIONS:\n\n\n\n");
+  console.log([...ffmpegOptions, ...options]);
   try {
-    // Execute the unzip command
-    const { status, stdout, stderr } = await utils.exec("/usr/bin/unzip", [
-      "-o",
-      `${FFMPEG_ZIP_PATH}`,
-      "-d",
-      `${BINARY_DIR_PATH}`,
-    ]);
-
-    // Check the exit status of the command
-    if (status === 0) {
-      // If the command was successful, display success message
-      logger(`ffmpeg extracted to ${BINARY_DIR_PATH}/ffmpeg`);
-    } else {
-      // If there's a non-zero status, consider it an error and display stderr
-      logger(`Error extracting ffmpeg: ${stderr || stdout}`);
-    }
-  } catch (error) {
-    // If there's an exception during the command execution, display the error
-    logger(`Unzip failed: ${error.message}`);
-  }
-}
-
-export async function callFFMPEG() {
-  const inputFilename = core.status.url
-    .replace("file://", "")
-    .replace(/\s/g, "\\ ");
-  logger(inputFilename);
-  let outputDir;
-  if (preferences.get("output_dir")) {
-    outputDir = preferences.get("output_dir");
-  } else {
-    outputDir = utils.chooseFile("Please select the output directory\n", {
-      chooseDir: true,
-    });
-  }
-  console.log(`Output dir: ${outputDir}`);
-  let outputFilename = utils.prompt(
-    "Enter output filename (without extension):\n",
-  );
-  console.log(`Output filename: ${outputFilename}`);
-  let finalOutputName = `${outputDir}/${outputFilename}.mp4`;
-  try {
-    logger(`Processing ${inputFilename} -> ${finalOutputName}`);
     const { status, stdout, stderr } = await utils.exec(
       preferences.get("ffmpeg_path"),
-      [
-        "-hide_banner",
-        "-loglevel",
-        "warning",
-        "-i",
-        inputFilename,
-        "-vf",
-        "scale=1280:720",
-        `${finalOutputName}`,
-        "-y",
-      ],
+      [...ffmpegOptions, ...options],
     );
+
     console.log(stdout);
     console.log(stderr);
-    if (status === 0) {
-      logger(`Video successfully processed: ${finalOutputName}`);
-    }
+    return { status, stdout, stderr };
   } catch (error) {
     logger(`${stderr || error}`);
+    return { status: 1, stdout: "", stderr: error.stderr || error };
   }
 }
 

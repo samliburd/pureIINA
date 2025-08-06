@@ -8,6 +8,7 @@ const {
   utils,
   file,
   preferences,
+  playlist,
 } = iina;
 import * as helpers from "./helpers";
 // Initialize overlay
@@ -21,6 +22,7 @@ let secondClickPos = { x: 0, y: 0 };
 let isWaitingForSecondClick = false;
 let isHidden = true;
 let timeArr = ["00:00:00.000", secondsToISO(core.status.duration)];
+let outputDir = preferences.get("output_dir");
 let outputFilename = ""; // Store the output filename globally
 let useCrop = false;
 let startTime = "00:00:00.000",
@@ -117,12 +119,36 @@ function promptOutputFilename() {
   return outputFilename;
 }
 
+async function promptOutputDir() {
+  try {
+    // @ts-ignore - chooseFile actually returns a Promise despite what the types say
+    const tempOutput = await utils.chooseFile(
+      "Please select the output directory\n",
+      {
+        chooseDir: true,
+      },
+    );
+
+    if (tempOutput) {
+      outputDir = tempOutput;
+      core.osd(`Output directory set to: ${outputDir}`);
+    } else {
+      core.osd("No directory selected");
+    }
+
+    return tempOutput;
+  } catch (error) {
+    core.osd(`Error selecting directory: ${error}`);
+    return null;
+  }
+}
+
 function toggleCrop() {
   useCrop = !useCrop;
   core.osd(`Crop ${useCrop ? "enabled" : "disabled"}`);
 }
 
-async function copyToClipboard() {
+function generateCommand(direct = false) {
   // Ensure timeArr and normalizedCoordinates are defined and valid
   if (!timeArr[0] || !timeArr[1] || !normalizedCoordinates) {
     core.osd("Please set both start and end times and select a crop area.");
@@ -131,11 +157,46 @@ async function copyToClipboard() {
 
   // Replace spaces in the filename with backslash-escaped spaces
   const filename = core.status.url.replace("file://", "").replace(/\s/g, "\\ ");
+  if (direct) {
+    // Check if outputDir is set, if not use from preferences or prompt
+    // if (outputDir) {
+    //   if (preferences.get("output_dir") !== outputDir) {
+    //     outputDir = preferences.get("output_dir");
+    //   } else {
+    //     outputDir = promptOutputDir();
+    //     if (!outputDir) {
+    //       core.osd("Output directory not selected. Operation cancelled.");
+    //       return null;
+    //     }
+    //   }
+    // }
 
+    // Ensure we have an output filename
+    if (!outputFilename) {
+      outputFilename = promptOutputFilename();
+      if (!outputFilename) {
+        core.osd("Output filename not provided. Operation cancelled.");
+        return null;
+      }
+    }
+
+    let finalOutputFilename = `${outputDir}/${outputFilename}`;
+    return {
+      args: `-ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}` : ""} -c:v libx264 -crf 17 -preset fast -c:a aac -map_metadata -1 -map_chapters -1 -movflags +faststart ${finalOutputFilename}`.split(
+        " ",
+      ),
+      outputFilename: finalOutputFilename,
+    };
+  }
   // Construct the ffmpeg command with preserved backslashes
-  const ffmpegCommand = `ffmpeg -ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf "crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}" \\` : "\\"}
+  else {
+    return `ffmpeg -ss ${timeArr[0]} -to ${timeArr[1]} -i ${filename} ${useCrop ? `-vf "crop=${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}" \\` : "\\"}
 -c:v libx264 -crf 17 -preset fast -c:a aac -map_metadata -1 -map_chapters -1 -movflags +faststart ${outputFilename} && echo ${outputFilename}`;
+  }
+}
 
+async function copyToClipboard(command) {
+  const ffmpegCommand = generateCommand();
   // Ask the user for confirmation
   const userResponse = utils.ask(
     `Do you want to copy the following command to your clipboard?\n\n${ffmpegCommand}`,
@@ -155,6 +216,34 @@ async function copyToClipboard() {
   } else {
     core.osd("User clicked Cancel");
   }
+}
+async function listFiles() {
+  const playlistDir = await utils.chooseFile("Select playlist directory", {
+    chooseDir: true,
+  });
+  const { status, stdout, stderr } = await utils.exec("/bin/bash", [
+    "-c",
+    `ls ${playlistDir}`,
+  ]);
+  const filesArray = stdout.split("\n");
+  const videoFiles = filesArray
+    .filter((file) =>
+      file.match(
+        /[-\w\s\.]+\.(mp4|webm|mkv|avi|m4v|mov|flv|ogv|3gp|wmv|mts|m2ts|ts)/gim,
+      ),
+    )
+    .map((file) => {
+      return `${playlistDir}/${file}`;
+    });
+  // for (const [index, file] of videoFiles.entries()) {
+  //   playlist.add(file, index);
+  // }
+  videoFiles.reverse().forEach((file) => {
+    playlist.add(file);
+  });
+  // console.log(playlist.list());
+  console.log(typeof playlist.list);
+  // console.log(`\n\n\nDIRFILES: ${stdout}\n\n\n`);
 }
 
 // Event listeners
@@ -192,6 +281,11 @@ input.onKeyDown("alt+k", async () => {
   }
 });
 const subOverlayMenu = menu.item("Overlay");
+subOverlayMenu.addSubMenuItem(
+  menu.item("List files", () => {
+    listFiles();
+  }),
+);
 
 // Menu items
 subOverlayMenu.addSubMenuItem(
@@ -207,10 +301,10 @@ subOverlayMenu.addSubMenuItem(
   }),
 );
 menu.addItem(subOverlayMenu);
-const subTimeMenu = menu.item("Time");
-
+// const subTimeMenu = menu.item("Time");
+const subOptionsMenu = menu.item("Options");
 // Add submenu items with correct key bindings
-subTimeMenu.addSubMenuItem(
+subOptionsMenu.addSubMenuItem(
   menu.item(
     "Set start time",
     () => {
@@ -221,7 +315,7 @@ subTimeMenu.addSubMenuItem(
   ), // Single key binding
 );
 
-subTimeMenu.addSubMenuItem(
+subOptionsMenu.addSubMenuItem(
   menu.item(
     "Set end time",
     () => {
@@ -231,71 +325,10 @@ subTimeMenu.addSubMenuItem(
     { keyBinding: "Meta+u" },
   ), // Meta (Command) + u
 );
-menu.addItem(subTimeMenu);
-const subFFMPEGMenu = menu.item("ffmpeg");
-subFFMPEGMenu.addSubMenuItem(
-  menu.item("Init", () => {
-    helpers.initFFMPEG();
-  }), // Meta (Command) + u
-);
-subFFMPEGMenu.addSubMenuItem(
-  menu.item("Test prefs", () => {
-    const ffPath = preferences.get("ffmpeg_path");
-    core.osd(ffPath);
-  }), // Meta (Command) + u
-);
-subFFMPEGMenu.addSubMenuItem(
-  menu.item("Call ffmpeg", () => {
-    helpers.callFFMPEG();
-  }), // Meta (Command) + u
-);
-subFFMPEGMenu.addSubMenuItem(
-  menu.item("pwd", () => {
-    const path = utils.chooseFile("Please select a subtitle file", {
-      chooseDir: true,
-    });
-
-    (async () => {
-      const { status, stdout, stderr } = await utils.exec("/bin/bash", [
-        "-c",
-        "ls /Users/samliburd/",
-      ]);
-
-      // core.osd(stdout);
-      console.log(stdout);
-      // console.log(stderr);
-    })();
-  }), // Meta (Command) + u
-);
-menu.addItem(subFFMPEGMenu);
-const subDownloadMenu = menu.item("Download");
-subDownloadMenu.addSubMenuItem(
-  menu.item("Download", () => {
-    // file.write("@data/mynewfile.txt", "hello");
-    helpers.downloadFFMPEG();
-  }), // Meta (Command) + u
-);
-subDownloadMenu.addSubMenuItem(
-  menu.item("Unzip", () => {
-    helpers.unzip();
-  }), // Meta (Command) + u
-);
-subDownloadMenu.addSubMenuItem(
-  menu.item("Find binary", () => {
-    // file.write("@data/mynewfile.txt", "hello");
-    helpers.findBinary();
-  }), // Meta (Command) + u
-);
-// menu.addItem(subDownloadMenu);
-const subOptionsMenu = menu.item("Options");
 subOptionsMenu.addSubMenuItem(
-  menu.item(
-    "Toggle crop",
-    () => {
-      toggleCrop();
-    },
-    { keyBinding: "Meta+T" },
-  ),
+  menu.item("Set output directory", () => {
+    promptOutputDir();
+  }),
 );
 subOptionsMenu.addSubMenuItem(
   menu.item(
@@ -306,7 +339,71 @@ subOptionsMenu.addSubMenuItem(
     { keyBinding: "Shift+Meta+u" },
   ), // Shift + Meta (Command) + u
 );
+subOptionsMenu.addSubMenuItem(
+  menu.item(
+    "Toggle crop",
+    () => {
+      toggleCrop();
+    },
+    { keyBinding: "Meta+T" },
+  ),
+);
 menu.addItem(subOptionsMenu);
+const subFFMPEGMenu = menu.item("FFMPEG");
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Initialise ffmpeg", () => {
+    helpers.initFFMPEG();
+  }), // Meta (Command) + u
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Download ffmpeg", () => {
+    helpers.downloadFFMPEG().then((result) => {
+      if (result === true) {
+        console.log("Now running the next step...");
+        helpers.unzip().then((result) => {
+          helpers.logger(`Download and extract successful.`);
+        });
+      } else {
+        console.error(`Download failed: ${result}`);
+      }
+    });
+  }),
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Show ffmpeg path", () => {
+    const ffPath = preferences.get("ffmpeg_path");
+    core.osd(ffPath);
+  }), // Meta (Command) + u
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item("Show command", () => {
+    core.osd(generateCommand(true));
+    console.log(generateCommand(true));
+  }),
+);
+subFFMPEGMenu.addSubMenuItem(
+  menu.item(
+    "Run ffmpeg",
+    () => {
+      let { args, outputFilename } = generateCommand(true);
+      let cleanedArgs = args.filter((entry) => entry !== "");
+      let executeCommand = utils.ask(
+        `Do you want to run this ffmpeg command:\n\nffmpeg ${cleanedArgs.join(" ")}`,
+      );
+      if (executeCommand) {
+        helpers.logger(`Processing ${filename} -> ${outputFilename}`);
+        helpers.callFFMPEG(cleanedArgs).then((result) => {
+          if (result.status === 0) {
+            helpers.logger(`Video successfully processed: ${outputFilename}`);
+            executeCommand = false;
+          }
+        });
+      }
+    },
+    { keyBinding: "Command+Shift+R" },
+  ), // Meta (Command) + u
+);
+menu.addItem(subFFMPEGMenu);
 // Add the parent menu item to the main menu
 
 // Periodic updates
