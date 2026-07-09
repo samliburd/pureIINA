@@ -1,5 +1,3 @@
-import {logger} from "./helpers";
-
 const { input, core, overlay} = iina;
 
 import { AppState, VideoProcessor } from "./core";
@@ -93,7 +91,5 @@ function initialize() {
   setupMenus(appState, videoProcessor);
   startIntervals();
 }
-// let frame = core.window.frame;
-// // move the window to (100, 100)
-// core.window.frame = { ...frame, x: 0, y: 0 };
+
 initialize();
