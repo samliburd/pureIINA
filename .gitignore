@@ -6,7 +6,7 @@ iina-plugin-definition/
 
 # Node dependencies
 node_modules/
-
+wiki/
 # Build artifacts
 dist/
 .parcel-cache/
