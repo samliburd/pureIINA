@@ -18,5 +18,7 @@
   ],
   "allowedDomains": ["*"],
   "preferencesPage": "pref.html",
-  "preferenceDefaults": {}
+  "preferenceDefaults": {
+    "ffmpeg_path": ""
+  }
 }

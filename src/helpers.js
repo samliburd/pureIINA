@@ -53,38 +53,32 @@ export async function initFFMPEG() {
   if (!helpTextShown) {
     utils.ask(`If \`ffmpeg_path\` is not set in the plugin's preferences (⌘,) this function will try to find ffmpeg in the plugin's data dir and then the system $PATH.
   \n\nIf it is not in either location it will prompt to download ffmpeg to the data dir.\n\n
-  If you know where ffmpeg is installed, decline this prompt and enter the location in the next prompt.`);
+  If you know where ffmpeg is installed, decline this prompt and enter the location in the preferences.`);
     helpTextShown = true;
   }
-  if (file.exists(preferences.get("ffmpeg_path"))) {
-    FFMPEG_BINARY_PATH = preferences.get("ffmpeg_path");
+
+  // Grab the preference (will be "" if untouched due to Info.json defaults)
+  const prefPath = preferences.get("ffmpeg_path");
+
+  if (prefPath && file.exists(prefPath)) {
+    FFMPEG_BINARY_PATH = prefPath;
     logger(`ffmpeg found at ${FFMPEG_BINARY_PATH}`);
-  } else if (!file.exists(preferences.get("ffmpeg_path"))) {
-    const userPath = utils.prompt(
-      `Please enter the PATH to ffmpeg.
-
-Typing \`which ffmpeg\` into your terminal will show you where ffmpeg is installed.
-
-Common locations include:
-  /opt/homebrew/bin/ffmpeg
-  /usr/local/bin/ffmpeg
-  /opt/local/bin/ffmpeg`,
-    );
-    if (file.exists(userPath)) {
-      FFMPEG_BINARY_PATH = userPath;
-      logger(`ffmpeg found at: ${FFMPEG_BINARY_PATH}`);
-    } else if (file.exists("@data/bin/ffmpeg")) {
+  } else {
+    // Check plugin data dir first
+    if (file.exists("@data/bin/ffmpeg")) {
       FFMPEG_BINARY_PATH = `${BINARY_DIR_PATH}/ffmpeg`;
       logger(`ffmpeg found at: ${FFMPEG_BINARY_PATH}`);
     } else {
+      // Search system PATHs dynamically including ~ directories
       try {
         const { status, stdout, stderr } = await utils.exec("/bin/bash", [
           "-c",
-          "export PATH=$PATH:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin && command -v ffmpeg",
-          // "echo $PATH",
+          "export PATH=$PATH:$HOME/.local/bin:$HOME/miniconda3/envs/default/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin && command -v ffmpeg",
         ]);
-        if (status === 0) {
-          FFMPEG_BINARY_PATH = stdout;
+
+        if (status === 0 && stdout) {
+          // .trim() is CRITICAL here to remove the hidden '\n' from bash
+          FFMPEG_BINARY_PATH = stdout.trim();
           logger(`ffmpeg found at ${FFMPEG_BINARY_PATH}`);
         } else {
           const askDownload = utils.ask("Do you want to download ffmpeg?\n");
@@ -95,9 +89,10 @@ Common locations include:
           }
         }
       } catch (error) {
-        logger(`Could not find ffmpeg`);
+        logger(`Could not find ffmpeg: ${error.message}`);
       }
     }
+
     if (FFMPEG_BINARY_PATH) {
       preferences.set("ffmpeg_path", FFMPEG_BINARY_PATH);
       logger("Saved ffmpeg path to preferences");

@@ -98,7 +98,7 @@ export function setupMenus(appState, videoProcessor) {
       const commandBuilder = new FFMPEGCommandBuilder(appState);
       const command = commandBuilder.buildCommand(true);
       if (command) {
-        core.osd(`ffmpeg ${command.args.join(" ")}`);
+        UserPrompts.showCommand(`ffmpeg ${command.args.join(" ")}`)
         console.log(command);
       }
     }),

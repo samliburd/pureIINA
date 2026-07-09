@@ -116,4 +116,8 @@ export class UserPrompts {
     const helpText = `Edit Crop Area\n\nCurrent crop: crop=${currentCrop}\n\nEnter crop values in format: width:height:x:y\nExample: 1280:720:100:50\n\nCurrent crop: ${currentCrop}`;
     return utils.prompt(helpText);
   }
+
+  static showCommand(message) {
+    return utils.ask(message);
+  }
 }

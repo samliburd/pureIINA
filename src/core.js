@@ -15,9 +15,12 @@ export class AppState {
     this.isWaitingForSecondClick = false;
     this.isHidden = true;
     this.timeArr = [DEFAULT_START_TIME, this.getFormattedDuration()];
-    this.outputDir = preferences.get("output_dir");
+
+    // --- UPDATED: Initialize as null instead of fetching from preferences ---
+    this.outputDir = null;
+
     this.outputFilename = "";
-    this.useCrop = true;
+    this.useCrop = false;
     this.startTime = DEFAULT_START_TIME;
     this.endTime = this.getFormattedDuration();
   }
@@ -28,6 +31,14 @@ export class AppState {
 
   getCurrentFilename() {
     return decodeURIComponent(core.status.url.replace("file://", ""));
+  }
+
+  getInputFileDirectory() {
+    const url = core.status.url;
+    if (!url || !url.startsWith("file://")) return null;
+
+    const decodedPath = decodeURIComponent(url.replace("file://", ""));
+    return decodedPath.substring(0, decodedPath.lastIndexOf('/'));
   }
 
   reset() {
@@ -82,7 +93,17 @@ export class FFMPEGCommandBuilder {
       this.state.outputFilename = promptedFilename;
     }
 
-    const finalOutputFilename = `${this.state.outputDir}/${this.state.outputFilename}`;
+    // --- UPDATED LOGIC ---
+    // Fall back to the input file's directory if outputDir is empty
+    const resolvedOutputDir = this.state.outputDir || this.state.getInputFileDirectory();
+
+    if (!resolvedOutputDir) {
+      core.osd("Error: Cannot determine output directory. Is this a local file?");
+      return null;
+    }
+
+    const finalOutputFilename = `${resolvedOutputDir}/${this.state.outputFilename}`;
+
     const baseArgs = [
       "-ss",
       this.state.timeArr[0],
