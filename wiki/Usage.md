@@ -7,8 +7,7 @@ Once pureIINA is installed in IINA, it can be controlled entirely through keyboa
 | Shortcut | Action | Description |
 |----------|--------|-------------|
 | `c` | **Start/Complete Crop** | Activates the crop mode for the second click to complete the rectangle. |
-| `Option + c` | **Cancel Crop** | Clears the current crop selection and resets the overlay. |
-| `h` | **Toggle Overlay Info** | Hides or shows the informational text on the overlay. |
+| `Option + c` | **Cancel Crop** | Clears the current crop selection. |
 | `Option + k` | **Copy Command** | Generates the FFmpeg command and copies it to your clipboard. |
 | `u` | **Set Start Time** | Sets the current video position as the start time for the cut. |
 | `Cmd + u` | **Set End Time** | Sets the current video position as the end time for the cut. |

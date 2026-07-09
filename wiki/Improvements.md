@@ -9,9 +9,6 @@ While pureIINA is functional, the codebase has several areas that could be tidie
    - Commented-out code (like the `listFiles` playlist function in `src/index.js`) should be removed to keep the source clean.
 2. **Code Formatting:**
    - The project has `prettier` in its `devDependencies`, but some files have inconsistent formatting. Running `npm run prettier --write .` (or equivalent) across the `src` and `ui` directories will normalize styling.
-3. **Refactoring Overlay Logic:**
-   - In `ui/overlay/overlay.js`, the coordinate normalization logic could be further decoupled from the DOM elements.
-   - The CSS in `ui/overlay/styles.css` can be streamlined, removing any unused or commented-out styling rules.
 
 ## Feature Improvements
 1. **FFmpeg Setup Flow:**

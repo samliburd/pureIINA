@@ -9,7 +9,7 @@ This is incredibly useful for users who want to quickly extract a specific scene
 
 ## Core Capabilities
 - **Time Trimming:** Set precise start and end times for the video segment you wish to extract.
-- **Visual Cropping:** Interactively draw a crop rectangle directly over the video using an interactive overlay.
+- **Visual Cropping:** Click on the video to define a crop rectangle.
 - **FFmpeg Integration:** Automatically build the correct FFmpeg command with the selected times and crop dimensions. You can copy this command to your clipboard or run it directly within IINA.
 - **Automatic Dependency Management:** If FFmpeg is not installed on the system, pureIINA can automatically download and configure a local copy of FFmpeg to use.
 

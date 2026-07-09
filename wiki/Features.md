@@ -2,10 +2,8 @@
 
 pureIINA consists of several interlinked features designed to make video clipping and cropping seamless.
 
-## 1. Visual Crop Selection
-Using the `iina.overlay` API, pureIINA injects an interactive HTML overlay on top of the playing video. 
+## 1. Crop Selection
 - **Two-Click Cropping:** Users click once to set the top-left corner and click again to set the bottom-right corner of their desired crop area.
-- **Real-Time Coordinates:** The overlay displays real-time normalized and absolute coordinates of the crop selection.
 - **Crop Editing:** Users can manually edit the crop dimensions via a prompt if they require precise pixel-perfect dimensions.
 
 ## 2. Time Trimming

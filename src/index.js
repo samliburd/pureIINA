@@ -1,6 +1,5 @@
 const {
   standaloneWindow,
-  overlay,
   console,
   menu,
   core,
@@ -295,42 +294,6 @@ Current crop: ${currentCrop}`;
   }
 }
 
-class OverlayManager {
-  constructor(state) {
-    this.state = state;
-    this._initialize();
-  }
-
-  _initialize() {
-    overlay.loadFile("dist/ui/overlay/index.html");
-    overlay.setClickable(true);
-  }
-
-  updateOverlay() {
-    overlay.postMessage("update", {
-      dimensions: this.state.dimensions,
-      windowSize: this.state.frame,
-      firstClick: this.state.firstClickPos,
-      secondClick: this.state.secondClickPos,
-      rectangleCoordinates: this.state.rectangleCoordinates,
-      normalizedCoordinates: this.state.normalizedCoordinates,
-      isHidden: this.state.isHidden,
-    });
-  }
-
-  clearRectangle() {
-    overlay.postMessage("clear-rectangle");
-  }
-
-  show() {
-    overlay.show();
-  }
-
-  hide() {
-    overlay.hide();
-  }
-}
-
 class VideoProcessor {
   constructor(state) {
     this.state = state;
@@ -362,7 +325,6 @@ class VideoProcessor {
   handleMouseClick(x, y) {
     if (!this.state.useCrop) return;
 
-    overlayManager.show();
     core.osd(x.toString());
 
     const adjustedY = Math.round(core.window.frame.height - y);
@@ -461,9 +423,6 @@ class VideoProcessor {
     core.osd(
       `Crop set to: ${parsedCrop.width}:${parsedCrop.height}:${parsedCrop.x}:${parsedCrop.y}`,
     );
-
-    // Show overlay to display the crop rectangle
-    overlayManager.show();
   }
 
   async copyCommandToClipboard() {
@@ -535,7 +494,6 @@ class VideoProcessor {
 
 // Initialize application
 const appState = new AppState();
-const overlayManager = new OverlayManager(appState);
 const videoProcessor = new VideoProcessor(appState);
 
 // Event Handlers
@@ -562,12 +520,7 @@ function setupEventListeners() {
 
   input.onKeyDown("alt+c", () => {
     appState.reset();
-    overlayManager.clearRectangle();
     core.osd("Crop cancelled.");
-  });
-
-  input.onKeyDown("h", () => {
-    appState.isHidden = !appState.isHidden;
   });
 
   input.onKeyDown("alt+k", async () => {
@@ -577,28 +530,8 @@ function setupEventListeners() {
 
 // Menu Setup
 function setupMenus() {
-  setupOverlayMenu();
   setupOptionsMenu();
   setupFFMPEGMenu();
-}
-
-function setupOverlayMenu() {
-  const subOverlayMenu = menu.item("Overlay");
-
-  subOverlayMenu.addSubMenuItem(
-    menu.item("Show Video Overlay", () => {
-      core.osd("Show Video Overlay");
-      overlayManager.show();
-    }),
-  );
-
-  subOverlayMenu.addSubMenuItem(
-    menu.item("Hide Video Overlay", () => {
-      overlayManager.hide();
-    }),
-  );
-
-  menu.addItem(subOverlayMenu);
 }
 
 function setupOptionsMenu() {
@@ -736,7 +669,6 @@ function initialize() {
   // Periodic updates
   setInterval(() => {
     videoProcessor.updateVideoVariables();
-    overlayManager.updateOverlay();
   }, 500);
 }
 

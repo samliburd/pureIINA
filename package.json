@@ -4,7 +4,6 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "serve-overlay": "parcel serve ui/overlay/index.html --dist-dir dist/ui/overlay",
     "build": "rm -rf dist .parcel-cache && parcel build . --no-content-hash",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -27,12 +26,6 @@
   "entry": "src/index.js",
   "targets": {
     "main": false,
-
-    "overlay": {
-      "distDir": "./dist/ui/overlay",
-      "source": "ui/overlay/index.html",
-      "publicUrl": "./"
-    },
     "entry": {
       "distDir": "./dist/",
       "source": "src/index.js",
