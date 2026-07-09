@@ -174,9 +174,7 @@ class AppState {
   }
 
   getCurrentFilename() {
-    return core.status.url
-      .replace("file://", "")
-      .replace(REGEX_WHITESPACE, "\\ ");
+    return decodeURIComponent(core.status.url.replace("file://", ""));
   }
 
   reset() {
@@ -277,11 +275,12 @@ class FFMPEGCommandBuilder {
   }
 
   _buildClipboardCommand(filename) {
+    const escapedFilename = filename.replace(REGEX_WHITESPACE, "\\ ");
     const cropFilter = this.state.useCrop
       ? `-vf "crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}" \\`
       : "\\";
 
-    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${filename} ${cropFilter}\n-c:v ${FFMPEG_DEFAULTS.codec} -crf ${FFMPEG_DEFAULTS.crf} -preset ${FFMPEG_DEFAULTS.preset} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${this.state.outputFilename} && echo ${this.state.outputFilename}`;
+    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${escapedFilename} ${cropFilter}\n-c:v ${FFMPEG_DEFAULTS.codec} -crf ${FFMPEG_DEFAULTS.crf} -preset ${FFMPEG_DEFAULTS.preset} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${this.state.outputFilename} && echo ${this.state.outputFilename}`;
   }
 }
 
@@ -456,9 +455,7 @@ class VideoProcessor {
     );
 
     if (userConfirmed) {
-      const inputFilename = this.state
-        .getCurrentFilename()
-        .replace(/\\ /g, " ");
+      const inputFilename = this.state.getCurrentFilename();
       helpers.logger(`Processing ${inputFilename} -> ${outputFilename}`);
 
       try {
