@@ -12,6 +12,7 @@
   "permissions": [
     "show-osd",
     "show-alert",
+    "video-overlay",
     "network-request",
     "file-system"
   ],

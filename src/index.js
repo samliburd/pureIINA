@@ -1,5 +1,6 @@
 const {
   standaloneWindow,
+  overlay,
   console,
   menu,
   core,
@@ -284,6 +285,37 @@ class FFMPEGCommandBuilder {
   }
 }
 
+class OverlayManager {
+  constructor(state) {
+    this.state = state;
+    this._initialize();
+  }
+
+  _initialize() {
+    overlay.loadFile("dist/ui/overlay/index.html");
+    // Only set clickable if you want the user to interact with it
+    // For just displaying info, false is better.
+    overlay.setClickable(false);
+    overlay.show();
+  }
+
+  updateOverlay() {
+    overlay.postMessage("update-video-info", {
+      filename: this.state.getCurrentFilename(),
+      duration: this.state.getFormattedDuration(),
+      dimensions: this.state.dimensions || { videoWidth: 0, videoHeight: 0 },
+    });
+  }
+
+  show() {
+    overlay.show();
+  }
+
+  hide() {
+    overlay.hide();
+  }
+}
+
 class VideoProcessor {
   constructor(state) {
     this.state = state;
@@ -477,6 +509,7 @@ class VideoProcessor {
 // ============================================================================
 
 const appState = new AppState();
+const overlayManager = new OverlayManager(appState);
 const videoProcessor = new VideoProcessor(appState);
 
 function setupEventListeners() {
@@ -647,6 +680,7 @@ function initialize() {
   // Periodic updates
   setInterval(() => {
     videoProcessor.updateVideoVariables();
+    overlayManager.updateOverlay();
   }, 500);
 }
 
