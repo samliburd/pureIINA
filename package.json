@@ -14,19 +14,22 @@
     "@parcel/core": "^2.16.0",
     "@parcel/optimizer-terser": "^2.14.4",
     "@parcel/transformer-sass": "^2.14.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
     "iina-plugin-definition": "^0.99.4",
     "prettier": "^3.5.3",
-    "process": "^0.11.10"
+    "process": "^0.11.10",
+    "typescript": "5.4.5"
   },
   "dependencies": {
     "ffmpeg-static": "^5.2.0",
     "parcel": "^2.14.1",
     "parcel-optimizer-webview": "git+https://github.com/iina/parcel-optimizer-webview.git",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "browserslist": "safari >= 9",
-  "entry": "src/index.js",
+  "entry": "dist/index.js",
   "targets": {
     "main": false,
     "overlay": {
@@ -37,7 +40,7 @@
     },
     "entry": {
       "distDir": "./dist/",
-      "source": "src/index.js",
+      "source": "src/index.ts",
       "isLibrary": false
     }
   }

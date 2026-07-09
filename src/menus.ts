@@ -6,10 +6,16 @@ import * as helpers from "./helpers";
 export function setupMenus(appState, videoProcessor) {
   // 1. Options Menu
   const subOptionsMenu = menu.item("Options");
-  subOptionsMenu.addSubMenuItem(menu.item("Set start time", () => {
-    const startTime = videoProcessor.setTimePosition(0);
-    core.osd(`Start time set to: ${startTime}`);
-  }, { keyBinding: "U" }));
+  subOptionsMenu.addSubMenuItem(
+    menu.item(
+      "Set start time",
+      () => {
+        const startTime = videoProcessor.setTimePosition(0);
+        core.osd(`Start time set to: ${startTime}`);
+      },
+      { keyBinding: "U" },
+    ),
+  );
   subOptionsMenu.addSubMenuItem(
     menu.item(
       "Set end time",
@@ -65,12 +71,13 @@ export function setupMenus(appState, videoProcessor) {
     ),
   );
 
-
   // 2. FFMPEG Menu
   const subFFMPEGMenu = menu.item("FFMPEG");
-  subFFMPEGMenu.addSubMenuItem(menu.item("Initialise ffmpeg", () => {
-    helpers.initFFMPEG();
-  }));
+  subFFMPEGMenu.addSubMenuItem(
+    menu.item("Initialise ffmpeg", () => {
+      helpers.initFFMPEG();
+    }),
+  );
   subFFMPEGMenu.addSubMenuItem(
     menu.item("Download ffmpeg", () => {
       helpers.downloadFFMPEG().then((result) => {
@@ -97,8 +104,8 @@ export function setupMenus(appState, videoProcessor) {
     menu.item("Show command", () => {
       const commandBuilder = new FFMPEGCommandBuilder(appState);
       const command = commandBuilder.buildCommand(true);
-      if (command) {
-        UserPrompts.showCommand(`ffmpeg ${command.args.join(" ")}`)
+      if (command && typeof command !== "string" && command.args) {
+        UserPrompts.showCommand(`ffmpeg ${command.args.join(" ")}`);
         console.log(command);
       }
     }),
@@ -115,8 +122,12 @@ export function setupMenus(appState, videoProcessor) {
   );
   // 3. Overlay Menu
   const subOverlayMenu = menu.item("Overlay");
-  subOverlayMenu.addSubMenuItem(menu.item("Show Video Overlay", () => overlay.show()));
-  subOverlayMenu.addSubMenuItem(menu.item("Hide Video Overlay", () => overlay.hide()));
+  subOverlayMenu.addSubMenuItem(
+    menu.item("Show Video Overlay", () => overlay.show()),
+  );
+  subOverlayMenu.addSubMenuItem(
+    menu.item("Hide Video Overlay", () => overlay.hide()),
+  );
 
   // Add them all to the main menu
   menu.addItem(subOptionsMenu);

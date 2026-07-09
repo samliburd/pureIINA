@@ -1,6 +1,6 @@
 import { stderr } from "process";
 
-const { core, console, http, utils, exec, file, preferences } = iina;
+const { core, console, http, utils, file, preferences } = iina;
 
 const FFMPEG_URL = "https://evermeet.cx/ffmpeg/get/ffmpeg/zip";
 const FFMPEG_ZIP_PATH = utils.resolvePath("@tmp/ffmpeg.zip");

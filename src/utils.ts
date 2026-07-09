@@ -95,7 +95,10 @@ export class UserPrompts {
 
   static async promptOutputDir() {
     try {
-      const tempOutput = await utils.chooseFile("Please select the output directory\n", { chooseDir: true });
+      const tempOutput = await utils.chooseFile(
+        "Please select the output directory\n",
+        { chooseDir: true },
+      );
       if (tempOutput) {
         core.osd(`Output directory set to: ${tempOutput}`);
         return tempOutput;

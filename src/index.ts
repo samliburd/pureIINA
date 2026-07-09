@@ -1,4 +1,4 @@
-const { input, core, overlay} = iina;
+const { input, core, overlay } = iina;
 
 import { AppState, VideoProcessor } from "./core";
 import { setupMenus } from "./menus";
@@ -10,25 +10,30 @@ const videoProcessor = new VideoProcessor(appState);
 
 function setupEventListeners() {
   input.onMouseDown(input.MOUSE, () => {
-    input.onMouseUp(input.MOUSE, ({ x, y }) => {
+    input.onMouseUp(input.MOUSE, ({ x, y }: { x: number; y: number }) => {
       // 1. Let the processor sort out where this click belongs
       videoProcessor.handleMouseClick(x, y);
 
       // 2. Send the updated state to React
       sendClickState();
+      return true;
     });
+    return true;
   });
 
   input.onKeyDown("c", () => {
     if (!appState.isWaitingForSecondClick) {
       appState.isWaitingForSecondClick = true;
-      core.osd("Press 'c' again to cancel or click to set the second position.");
+      core.osd(
+        "Press 'c' again to cancel or click to set the second position.",
+      );
     } else {
       appState.isWaitingForSecondClick = false;
       core.osd("Waiting for second click cancelled.");
     }
     // Sync React UI with the "c" keypress
     sendClickState();
+    return true;
   });
 
   input.onKeyDown("alt+c", () => {
@@ -36,10 +41,11 @@ function setupEventListeners() {
     core.osd("Crop cancelled.");
     // Sync React UI after a reset
     sendClickState();
+    return true;
   });
-
-  input.onKeyDown("alt+k", async () => {
-    await videoProcessor.copyCommandToClipboard();
+  input.onKeyDown("alt+k", () => {
+    videoProcessor.copyCommandToClipboard();
+    return true;
   });
 }
 
@@ -50,7 +56,7 @@ function startIntervals() {
       videoFrame: core.window.frame,
       videoWidth: core.status.videoWidth,
       videoHeight: core.status.videoHeight,
-      scale: appState.scale || 1 // <-- Added scale here
+      scale: appState.scale || 1, // <-- Added scale here
     });
   }, 500);
 
@@ -70,17 +76,17 @@ function sendClickState() {
     // Normalize the individual clicks using the backend's scale
     normFirstClick: {
       x: Math.round(appState.firstClickPos.x * scale),
-      y: Math.round(appState.firstClickPos.y * scale)
+      y: Math.round(appState.firstClickPos.y * scale),
     },
     normSecondClick: {
       x: Math.round(appState.secondClickPos.x * scale),
-      y: Math.round(appState.secondClickPos.y * scale)
+      y: Math.round(appState.secondClickPos.y * scale),
     },
 
     // Send the final crop rectangle already calculated by CoordinateUtils in core.js
     cropBox: appState.normalizedCoordinates,
 
-    isWaiting: appState.isWaitingForSecondClick
+    isWaiting: appState.isWaitingForSecondClick,
   });
 }
 

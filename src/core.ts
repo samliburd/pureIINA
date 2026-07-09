@@ -1,9 +1,29 @@
 const { core, preferences, utils } = iina;
-import { DEFAULT_START_TIME, FFMPEG_DEFAULTS, REGEX_WHITESPACE } from "./constants";
+import {
+  DEFAULT_START_TIME,
+  FFMPEG_DEFAULTS,
+  REGEX_WHITESPACE,
+} from "./constants";
 import { TimeUtils, CoordinateUtils, UserPrompts } from "./utils";
 import * as helpers from "./helpers";
 
 export class AppState {
+  dimensions: any = null;
+  frame: any = null;
+  scale: any = null;
+  rectangleCoordinates: any = null;
+  normalizedCoordinates: any = null;
+  firstClickPos: { x: number; y: number } = { x: 0, y: 0 };
+  secondClickPos: { x: number; y: number } = { x: 0, y: 0 };
+  isWaitingForSecondClick: boolean = false;
+  isHidden: boolean = true;
+  timeArr: string[];
+  outputDir: any;
+  outputFilename: string = "";
+  useCrop: boolean = false;
+  startTime: string;
+  endTime: string;
+
   constructor() {
     this.dimensions = null;
     this.frame = null;
@@ -38,7 +58,7 @@ export class AppState {
     if (!url || !url.startsWith("file://")) return null;
 
     const decodedPath = decodeURIComponent(url.replace("file://", ""));
-    return decodedPath.substring(0, decodedPath.lastIndexOf('/'));
+    return decodedPath.substring(0, decodedPath.lastIndexOf("/"));
   }
 
   reset() {
@@ -49,7 +69,9 @@ export class AppState {
 }
 
 export class FFMPEGCommandBuilder {
-  constructor(state) {
+  state: AppState;
+
+  constructor(state: AppState) {
     this.state = state;
   }
 
@@ -95,10 +117,13 @@ export class FFMPEGCommandBuilder {
 
     // --- UPDATED LOGIC ---
     // Fall back to the input file's directory if outputDir is empty
-    const resolvedOutputDir = this.state.outputDir || this.state.getInputFileDirectory();
+    const resolvedOutputDir =
+      this.state.outputDir || this.state.getInputFileDirectory();
 
     if (!resolvedOutputDir) {
-      core.osd("Error: Cannot determine output directory. Is this a local file?");
+      core.osd(
+        "Error: Cannot determine output directory. Is this a local file?",
+      );
       return null;
     }
 
@@ -115,9 +140,9 @@ export class FFMPEGCommandBuilder {
 
     const videoArgs = this.state.useCrop
       ? [
-        "-vf",
-        `crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}`,
-      ]
+          "-vf",
+          `crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}`,
+        ]
       : [];
 
     const encodingArgs = [
@@ -159,7 +184,10 @@ export class FFMPEGCommandBuilder {
 }
 
 export class VideoProcessor {
-  constructor(state) {
+  state: AppState;
+  commandBuilder: FFMPEGCommandBuilder;
+
+  constructor(state: AppState) {
     this.state = state;
     this.commandBuilder = new FFMPEGCommandBuilder(state);
   }
@@ -324,7 +352,12 @@ export class VideoProcessor {
 
   async executeFFMPEG() {
     const commandResult = this.commandBuilder.buildCommand(true);
-    if (!commandResult) return;
+    if (
+      !commandResult ||
+      typeof commandResult === "string" ||
+      !("args" in commandResult)
+    )
+      return;
 
     const { args, outputFilename } = commandResult;
     const cleanedArgs = args.filter((entry) => entry !== "");

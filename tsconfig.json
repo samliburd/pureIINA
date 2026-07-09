@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
-    "lib": ["es6", "es7", "esnext"],
-    "sourceMap": false,
-    "target": "es6",
-    "module": "es6",
-    "typeRoots": [
-      "./node_modules/@types",
-      "./node_modules/iina-plugin-definition"
-    ]
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "jsx": "react",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "compileOnSave": false
+  "include": [
+    "src/**/*",
+    "ui/**/*",
+    "node_modules/iina-plugin-definition/iina/**/*.d.ts"
+  ]
 }
