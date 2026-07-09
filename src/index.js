@@ -286,33 +286,6 @@ class FFMPEGCommandBuilder {
   }
 }
 
-class OverlayManager {
-  constructor(state) {
-    this.state = state;
-  }
-
-  _initialize() {
-    overlay.loadFile("dist/ui/overlay/index.html");
-    overlay.setClickable(false);
-  }
-
-  updateOverlay() {
-    overlay.postMessage("update-video-info", {
-      filename: this.state.getCurrentFilename(),
-      duration: this.state.getFormattedDuration(),
-      dimensions: this.state.dimensions || { videoWidth: 0, videoHeight: 0 },
-    });
-  }
-
-  show() {
-    overlay.show();
-  }
-
-  hide() {
-    overlay.hide();
-  }
-}
-
 class VideoProcessor {
   constructor(state) {
     this.state = state;
@@ -506,7 +479,6 @@ class VideoProcessor {
 // ============================================================================
 
 const appState = new AppState();
-const overlayManager = new OverlayManager(appState);
 const videoProcessor = new VideoProcessor(appState);
 
 function setupEventListeners() {
@@ -665,26 +637,7 @@ function setupFFMPEGMenu() {
   menu.addItem(subFFMPEGMenu);
 }
 
-function setupOverlayMenu() {
-  const subOverlayMenu = menu.item("Overlay");
-
-  subOverlayMenu.addSubMenuItem(
-    menu.item("Show Video Overlay", () => {
-      overlayManager.show();
-    }),
-  );
-
-  subOverlayMenu.addSubMenuItem(
-    menu.item("Hide Video Overlay", () => {
-      overlayManager.hide();
-    }),
-  );
-
-  menu.addItem(subOverlayMenu);
-}
-
 function setupMenus() {
-  setupOverlayMenu();
   setupOptionsMenu();
   setupFFMPEGMenu();
 }
@@ -693,15 +646,9 @@ function initialize() {
   setupEventListeners();
   setupMenus();
 
-  event.on("iina.window-loaded", () => {
-    overlayManager._initialize();
-    overlayManager.show();
-  });
-
   // Periodic updates
   setInterval(() => {
     videoProcessor.updateVideoVariables();
-    overlayManager.updateOverlay();
   }, 500);
 }
 
