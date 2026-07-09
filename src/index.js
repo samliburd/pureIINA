@@ -668,7 +668,26 @@ function setupFFMPEGMenu() {
   menu.addItem(subFFMPEGMenu);
 }
 
+function setupOverlayMenu() {
+  const subOverlayMenu = menu.item("Overlay");
+
+  subOverlayMenu.addSubMenuItem(
+    menu.item("Show Video Overlay", () => {
+      overlayManager.show();
+    }),
+  );
+
+  subOverlayMenu.addSubMenuItem(
+    menu.item("Hide Video Overlay", () => {
+      overlayManager.hide();
+    }),
+  );
+
+  menu.addItem(subOverlayMenu);
+}
+
 function setupMenus() {
+  setupOverlayMenu();
   setupOptionsMenu();
   setupFFMPEGMenu();
 }
