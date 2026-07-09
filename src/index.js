@@ -11,7 +11,9 @@ const {
 } = iina;
 import * as helpers from "./helpers";
 
-// Constants
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 const REGEX_WHITESPACE = /\s/g;
 const DEFAULT_START_TIME = "00:00:00.000";
 const VIDEO_EXTENSIONS =
@@ -24,44 +26,9 @@ const FFMPEG_DEFAULTS = {
   container: "mp4",
 };
 
-// Application State
-class AppState {
-  constructor() {
-    this.dimensions = null;
-    this.frame = null;
-    this.scale = null;
-    this.rectangleCoordinates = null;
-    this.normalizedCoordinates = null;
-    this.firstClickPos = { x: 0, y: 0 };
-    this.secondClickPos = { x: 0, y: 0 };
-    this.isWaitingForSecondClick = false;
-    this.isHidden = true;
-    this.timeArr = [DEFAULT_START_TIME, this.getFormattedDuration()];
-    this.outputDir = preferences.get("output_dir");
-    this.outputFilename = "";
-    this.useCrop = false;
-    this.startTime = DEFAULT_START_TIME;
-    this.endTime = this.getFormattedDuration();
-  }
-
-  getFormattedDuration() {
-    return TimeUtils.secondsToISO(core.status.duration);
-  }
-
-  getCurrentFilename() {
-    return core.status.url
-      .replace("file://", "")
-      .replace(REGEX_WHITESPACE, "\\ ");
-  }
-
-  reset() {
-    this.firstClickPos = { x: 0, y: 0 };
-    this.secondClickPos = { x: 0, y: 0 };
-    this.isWaitingForSecondClick = false;
-  }
-}
-
-// Utility Classes
+// ============================================================================
+// UTILITY CLASSES
+// ============================================================================
 class TimeUtils {
   static secondsToISO(time) {
     return new Date(time * 1000).toISOString().substring(11, 23);
@@ -97,7 +64,6 @@ class CoordinateUtils {
   }
 
   static parseCropString(cropString) {
-    // Parse crop string in format "w:h:x:y"
     const parts = cropString.split(":");
     if (parts.length !== 4) {
       return null;
@@ -142,6 +108,81 @@ class CoordinateUtils {
     };
 
     return { firstClick, secondClick };
+  }
+}
+
+class UserPrompts {
+  static promptOutputFilename(currentFilename) {
+    const fn = utils.prompt(`Please enter the file name\n\n${currentFilename}`);
+    return fn ? `${fn}.${FFMPEG_DEFAULTS.container}` : null;
+  }
+
+  static async promptOutputDir() {
+    try {
+      const tempOutput = await utils.chooseFile(
+        "Please select the output directory\n",
+        { chooseDir: true },
+      );
+
+      if (tempOutput) {
+        core.osd(`Output directory set to: ${tempOutput}`);
+        return tempOutput;
+      } else {
+        core.osd("No directory selected");
+        return null;
+      }
+    } catch (error) {
+      core.osd(`Error selecting directory: ${error}`);
+      return null;
+    }
+  }
+
+  static confirmAction(message) {
+    return utils.ask(message);
+  }
+
+  static promptCropEdit(currentCrop) {
+    const helpText = `Edit Crop Area\n\nCurrent crop: crop=${currentCrop}\n\nEnter crop values in format: width:height:x:y\n- width: crop width in pixels\n- height: crop height in pixels  \n- x: horizontal offset from left\n- y: vertical offset from top\n\nExample: 1280:720:100:50\n\nCurrent crop: ${currentCrop}`;
+    return utils.prompt(helpText);
+  }
+}
+
+// ============================================================================
+// CORE DOMAIN CLASSES
+// ============================================================================
+class AppState {
+  constructor() {
+    this.dimensions = null;
+    this.frame = null;
+    this.scale = null;
+    this.rectangleCoordinates = null;
+    this.normalizedCoordinates = null;
+    this.firstClickPos = { x: 0, y: 0 };
+    this.secondClickPos = { x: 0, y: 0 };
+    this.isWaitingForSecondClick = false;
+    this.isHidden = true;
+    this.timeArr = [DEFAULT_START_TIME, this.getFormattedDuration()];
+    this.outputDir = preferences.get("output_dir");
+    this.outputFilename = "";
+    this.useCrop = false;
+    this.startTime = DEFAULT_START_TIME;
+    this.endTime = this.getFormattedDuration();
+  }
+
+  getFormattedDuration() {
+    return TimeUtils.secondsToISO(core.status.duration);
+  }
+
+  getCurrentFilename() {
+    return core.status.url
+      .replace("file://", "")
+      .replace(REGEX_WHITESPACE, "\\ ");
+  }
+
+  reset() {
+    this.firstClickPos = { x: 0, y: 0 };
+    this.secondClickPos = { x: 0, y: 0 };
+    this.isWaitingForSecondClick = false;
   }
 }
 
@@ -240,57 +281,7 @@ class FFMPEGCommandBuilder {
       ? `-vf "crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}" \\`
       : "\\";
 
-    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${filename} ${cropFilter}
--c:v ${FFMPEG_DEFAULTS.codec} -crf ${FFMPEG_DEFAULTS.crf} -preset ${FFMPEG_DEFAULTS.preset} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${this.state.outputFilename} && echo ${this.state.outputFilename}`;
-  }
-}
-
-class UserPrompts {
-  static promptOutputFilename(currentFilename) {
-    const fn = utils.prompt(`Please enter the file name\n\n${currentFilename}`);
-    return fn ? `${fn}.${FFMPEG_DEFAULTS.container}` : null;
-  }
-
-  static async promptOutputDir() {
-    try {
-      const tempOutput = await utils.chooseFile(
-        "Please select the output directory\n",
-        { chooseDir: true },
-      );
-
-      if (tempOutput) {
-        core.osd(`Output directory set to: ${tempOutput}`);
-        return tempOutput;
-      } else {
-        core.osd("No directory selected");
-        return null;
-      }
-    } catch (error) {
-      core.osd(`Error selecting directory: ${error}`);
-      return null;
-    }
-  }
-
-  static confirmAction(message) {
-    return utils.ask(message);
-  }
-
-  static promptCropEdit(currentCrop) {
-    const helpText = `Edit Crop Area
-
-Current crop: crop=${currentCrop}
-
-Enter crop values in format: width:height:x:y
-- width: crop width in pixels
-- height: crop height in pixels  
-- x: horizontal offset from left
-- y: vertical offset from top
-
-Example: 1280:720:100:50
-
-Current crop: ${currentCrop}`;
-
-    return utils.prompt(helpText);
+    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${filename} ${cropFilter}\n-c:v ${FFMPEG_DEFAULTS.codec} -crf ${FFMPEG_DEFAULTS.crf} -preset ${FFMPEG_DEFAULTS.preset} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${this.state.outputFilename} && echo ${this.state.outputFilename}`;
   }
 }
 
@@ -350,17 +341,14 @@ class VideoProcessor {
   }
 
   editCrop() {
-    // Enable crop if not already enabled
     if (!this.state.useCrop) {
       this.state.useCrop = true;
     }
 
-    // Get current crop string
     const currentCrop = CoordinateUtils.cropToCoordsString(
       this.state.normalizedCoordinates,
     );
 
-    // Show prompt with current crop values
     const userInput = UserPrompts.promptCropEdit(currentCrop);
 
     if (!userInput) {
@@ -368,7 +356,6 @@ class VideoProcessor {
       return;
     }
 
-    // Parse the user input
     const parsedCrop = CoordinateUtils.parseCropString(userInput);
 
     if (!parsedCrop) {
@@ -378,7 +365,6 @@ class VideoProcessor {
       return;
     }
 
-    // Validate crop dimensions against video dimensions
     const { videoWidth, videoHeight } = this.state.dimensions;
 
     if (parsedCrop.width <= 0 || parsedCrop.height <= 0) {
@@ -401,16 +387,13 @@ class VideoProcessor {
       return;
     }
 
-    // Set the normalized coordinates directly
     this.state.normalizedCoordinates = parsedCrop;
 
-    // Calculate the rectangle coordinates for display
     this.state.rectangleCoordinates = CoordinateUtils.denormalizeCoordinates(
       parsedCrop,
       this.state.scale,
     );
 
-    // Calculate click positions for consistency with mouse selection
     const { firstClick, secondClick } = CoordinateUtils.coordsToClickPositions(
       this.state.rectangleCoordinates,
       this.state.frame.height,
@@ -492,20 +475,20 @@ class VideoProcessor {
   }
 }
 
-// Initialize application
+// ============================================================================
+// APPLICATION SETUP & ENTRY
+// ============================================================================
+
 const appState = new AppState();
 const videoProcessor = new VideoProcessor(appState);
 
-// Event Handlers
 function setupEventListeners() {
-  // Mouse events
   input.onMouseDown(input.MOUSE, () => {
     input.onMouseUp(input.MOUSE, ({ x, y }) => {
       videoProcessor.handleMouseClick(x, y);
     });
   });
 
-  // Keyboard shortcuts
   input.onKeyDown("c", () => {
     if (!appState.isWaitingForSecondClick) {
       appState.isWaitingForSecondClick = true;
@@ -526,12 +509,6 @@ function setupEventListeners() {
   input.onKeyDown("alt+k", async () => {
     await videoProcessor.copyCommandToClipboard();
   });
-}
-
-// Menu Setup
-function setupMenus() {
-  setupOptionsMenu();
-  setupFFMPEGMenu();
 }
 
 function setupOptionsMenu() {
@@ -661,7 +638,11 @@ function setupFFMPEGMenu() {
   menu.addItem(subFFMPEGMenu);
 }
 
-// Application Initialization
+function setupMenus() {
+  setupOptionsMenu();
+  setupFFMPEGMenu();
+}
+
 function initialize() {
   setupEventListeners();
   setupMenus();
