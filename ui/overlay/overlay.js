@@ -2,14 +2,16 @@
 const firstClickPositionElement = document.getElementById("firstMousePos");
 const secondClickPositionElement = document.getElementById("secondMousePos");
 const rectangleCoordinatesElement = document.getElementById("rectangleCoords");
-const normalizedRectangleCoordinatesElement = document.getElementById("normalisedRectangleCoords");
+const normalizedRectangleCoordinatesElement = document.getElementById(
+  "normalisedRectangleCoords",
+);
 const scaleElement = document.getElementById("scale");
 const rootElement = document.getElementById("root");
 const bodyElement = document.body; // Reference to the body element
 // bodyElement.style.backgroundColor = "rgba(255, 0, 0, 0.4)";
 const timeElement = document.getElementById("time");
 
-timeElement.innerText = "HELLO!"
+timeElement.innerText = "HELLO!";
 // Square Class to represent click markers
 class Square {
   constructor(color, size = 5) {
@@ -46,57 +48,67 @@ rectangleElement.style.border = "2px solid rgba(223, 65, 143, 1)";
 bodyElement.appendChild(rectangleElement);
 
 // Handle updates from IINA
-iina.onMessage("update", ({
-                            dimensions,
-                            windowSize,
-                            firstClick,
-                            secondClick,
-                            rectangleCoordinates,
-                            normalizedCoordinates,
-                            isHidden,
-                          }) => {
-  const { videoWidth, videoHeight } = dimensions;
-  const { width: frameWidth, height: frameHeight } = windowSize;
+iina.onMessage(
+  "update",
+  ({
+    dimensions,
+    windowSize,
+    firstClick,
+    secondClick,
+    rectangleCoordinates,
+    normalizedCoordinates,
+    isHidden,
+  }) => {
+    const { videoWidth, videoHeight } = dimensions;
+    const { width: frameWidth, height: frameHeight } = windowSize;
 
-  formatDecimals([firstClick, secondClick, rectangleCoordinates, normalizedCoordinates]);
+    formatDecimals([
+      firstClick,
+      secondClick,
+      rectangleCoordinates,
+      normalizedCoordinates,
+    ]);
 
-  // Update displayed information
-  document.getElementById("dimensions").innerText = `${videoWidth}x${videoHeight}`;
-  document.getElementById("windowSize").innerText = `${frameWidth}x${frameHeight}`;
+    // Update displayed information
+    document.getElementById("dimensions").innerText =
+      `${videoWidth}x${videoHeight}`;
+    document.getElementById("windowSize").innerText =
+      `${frameWidth}x${frameHeight}`;
 
-  if (isHidden) {
-    rootElement.classList.add("hidden");
-  } else {
-    rootElement.classList.remove("hidden");
-  }
+    if (isHidden) {
+      rootElement.classList.add("hidden");
+    } else {
+      rootElement.classList.remove("hidden");
+    }
 
-  firstClickPositionElement.innerText = `x: ${firstClick.x}, y: ${firstClick.y}`;
-  secondClickPositionElement.innerText = `x: ${secondClick.x}, y: ${secondClick.y}`;
+    firstClickPositionElement.innerText = `x: ${firstClick.x}, y: ${firstClick.y}`;
+    secondClickPositionElement.innerText = `x: ${secondClick.x}, y: ${secondClick.y}`;
 
-  const scale = videoWidth / frameWidth;
-  scaleElement.innerText = `${scale.toFixed(2)}`;
+    const scale = videoWidth / frameWidth;
+    scaleElement.innerText = `${scale.toFixed(2)}`;
 
-  // Update body size to match the window
-  updateBodySize(frameWidth, frameHeight);
+    // Update body size to match the window
+    updateBodySize(frameWidth, frameHeight);
 
-  // Update square positions
-  firstSquare.updatePosition(firstClick.x, firstClick.y);
-  secondSquare.updatePosition(secondClick.x, secondClick.y);
-  firstSquare.setBorderRadius("100%");
+    // Update square positions
+    firstSquare.updatePosition(firstClick.x, firstClick.y);
+    secondSquare.updatePosition(secondClick.x, secondClick.y);
+    firstSquare.setBorderRadius("100%");
 
-  // Update rectangle and coordinates
-  if (secondClick.x !== 0 && secondClick.y !== 0) {
-    // Re-enable the rectangle if new click positions are detected
-    rectangleElement.style.display = "block";
-    updateRectangle(rectangleCoordinates);
-  } else {
-    // Hide the rectangle if no valid crop area is selected
-    rectangleElement.style.display = "none";
-  }
+    // Update rectangle and coordinates
+    if (secondClick.x !== 0 && secondClick.y !== 0) {
+      // Re-enable the rectangle if new click positions are detected
+      rectangleElement.style.display = "block";
+      updateRectangle(rectangleCoordinates);
+    } else {
+      // Hide the rectangle if no valid crop area is selected
+      rectangleElement.style.display = "none";
+    }
 
-  // Display coordinates
-  displayCoordinates(rectangleCoordinates, normalizedCoordinates);
-});
+    // Display coordinates
+    displayCoordinates(rectangleCoordinates, normalizedCoordinates);
+  },
+);
 
 // Handle the "clear-rectangle" message
 iina.onMessage("clear-rectangle", () => {
@@ -119,14 +131,11 @@ function updateBodySize(width, height) {
 }
 
 function formatDecimals(objArray) {
-  objArray.forEach(obj => {
-
-    Object.keys(obj).forEach(key => {
+  objArray.forEach((obj) => {
+    Object.keys(obj).forEach((key) => {
       obj[key] = Number(Math.round(obj[key]));
     });
-
-  })
-
+  });
 }
 
 // Update the rectangle element's position and size
@@ -136,7 +145,6 @@ function updateRectangle(coordinates) {
   rectangleElement.style.width = `${coordinates.width}px`;
   rectangleElement.style.height = `${coordinates.height}px`;
 }
-
 
 // Display the rectangle and normalized coordinates
 function displayCoordinates(rectangleCoordinates, normalizedCoordinates) {

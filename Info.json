@@ -9,7 +9,6 @@
     "url": "https://iina.io"
   },
   "entry": "dist/index.js",
-  "global": "dist/global.js",
   "permissions": [
     "show-osd",
     "show-alert",

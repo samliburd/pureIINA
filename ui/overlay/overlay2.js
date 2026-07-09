@@ -5,14 +5,17 @@ export function initOverlayUI(iina) {
   // DOM Elements
   const firstClickPositionElement = document.getElementById("firstMousePos");
   const secondClickPositionElement = document.getElementById("secondMousePos");
-  const rectangleCoordinatesElement = document.getElementById("rectangleCoords");
-  const normalizedRectangleCoordinatesElement = document.getElementById("normalisedRectangleCoords");
+  const rectangleCoordinatesElement =
+    document.getElementById("rectangleCoords");
+  const normalizedRectangleCoordinatesElement = document.getElementById(
+    "normalisedRectangleCoords",
+  );
   const scaleElement = document.getElementById("scale");
   const rootElement = document.getElementById("root");
   const bodyElement = document.body;
   const timeElement = document.getElementById("time");
 
-  timeElement.innerText = "HELLO!"
+  timeElement.innerText = "HELLO!";
 
   class Square {
     constructor(color, size = 5) {
@@ -41,50 +44,60 @@ export function initOverlayUI(iina) {
   rectangleElement.style.border = "2px solid rgba(223, 65, 143, 1)";
   bodyElement.appendChild(rectangleElement);
 
-  iina.onMessage("update", ({
-                              dimensions,
-                              windowSize,
-                              firstClick,
-                              secondClick,
-                              rectangleCoordinates,
-                              normalizedCoordinates,
-                              isHidden,
-                            }) => {
-    const { videoWidth, videoHeight } = dimensions;
-    const { width: frameWidth, height: frameHeight } = windowSize;
+  iina.onMessage(
+    "update",
+    ({
+      dimensions,
+      windowSize,
+      firstClick,
+      secondClick,
+      rectangleCoordinates,
+      normalizedCoordinates,
+      isHidden,
+    }) => {
+      const { videoWidth, videoHeight } = dimensions;
+      const { width: frameWidth, height: frameHeight } = windowSize;
 
-    formatDecimals([firstClick, secondClick, rectangleCoordinates, normalizedCoordinates]);
+      formatDecimals([
+        firstClick,
+        secondClick,
+        rectangleCoordinates,
+        normalizedCoordinates,
+      ]);
 
-    document.getElementById("dimensions").innerText = `${videoWidth}x${videoHeight}`;
-    document.getElementById("windowSize").innerText = `${frameWidth}x${frameHeight}`;
+      document.getElementById("dimensions").innerText =
+        `${videoWidth}x${videoHeight}`;
+      document.getElementById("windowSize").innerText =
+        `${frameWidth}x${frameHeight}`;
 
-    if (isHidden) {
-      rootElement.classList.add("hidden");
-    } else {
-      rootElement.classList.remove("hidden");
-    }
+      if (isHidden) {
+        rootElement.classList.add("hidden");
+      } else {
+        rootElement.classList.remove("hidden");
+      }
 
-    firstClickPositionElement.innerText = `x: ${firstClick.x}, y: ${firstClick.y}`;
-    secondClickPositionElement.innerText = `x: ${secondClick.x}, y: ${secondClick.y}`;
+      firstClickPositionElement.innerText = `x: ${firstClick.x}, y: ${firstClick.y}`;
+      secondClickPositionElement.innerText = `x: ${secondClick.x}, y: ${secondClick.y}`;
 
-    const scale = videoWidth / frameWidth;
-    scaleElement.innerText = `${scale.toFixed(2)}`;
+      const scale = videoWidth / frameWidth;
+      scaleElement.innerText = `${scale.toFixed(2)}`;
 
-    updateBodySize(frameWidth, frameHeight);
+      updateBodySize(frameWidth, frameHeight);
 
-    firstSquare.updatePosition(firstClick.x, firstClick.y);
-    secondSquare.updatePosition(secondClick.x, secondClick.y);
-    firstSquare.setBorderRadius("100%");
+      firstSquare.updatePosition(firstClick.x, firstClick.y);
+      secondSquare.updatePosition(secondClick.x, secondClick.y);
+      firstSquare.setBorderRadius("100%");
 
-    if (secondClick.x !== 0 && secondClick.y !== 0) {
-      rectangleElement.style.display = "block";
-      updateRectangle(rectangleCoordinates);
-    } else {
-      rectangleElement.style.display = "none";
-    }
+      if (secondClick.x !== 0 && secondClick.y !== 0) {
+        rectangleElement.style.display = "block";
+        updateRectangle(rectangleCoordinates);
+      } else {
+        rectangleElement.style.display = "none";
+      }
 
-    displayCoordinates(rectangleCoordinates, normalizedCoordinates);
-  });
+      displayCoordinates(rectangleCoordinates, normalizedCoordinates);
+    },
+  );
 
   iina.onMessage("clear-rectangle", () => {
     rectangleElement.style.display = "none";
@@ -100,8 +113,8 @@ export function initOverlayUI(iina) {
   }
 
   function formatDecimals(objArray) {
-    objArray.forEach(obj => {
-      Object.keys(obj).forEach(key => {
+    objArray.forEach((obj) => {
+      Object.keys(obj).forEach((key) => {
         obj[key] = Number(Math.round(obj[key]));
       });
     });

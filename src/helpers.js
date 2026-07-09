@@ -51,12 +51,11 @@ export async function unzip() {
 
 export async function initFFMPEG() {
   if (!helpTextShown) {
-    const helpText /**/ =
-      utils.ask(`If \`ffmpeg_path\` is not set in the plugin's preferences (⌘,) this function will try to find ffmpeg in the plugin's data dir and then the system $PATH.
+    utils.ask(`If \`ffmpeg_path\` is not set in the plugin's preferences (⌘,) this function will try to find ffmpeg in the plugin's data dir and then the system $PATH.
   \n\nIf it is not in either location it will prompt to download ffmpeg to the data dir.\n\n
   If you know where ffmpeg is installed, decline this prompt and enter the location in the next prompt.`);
+    helpTextShown = true;
   }
-  helpTextShown = true;
   if (file.exists(preferences.get("ffmpeg_path"))) {
     FFMPEG_BINARY_PATH = preferences.get("ffmpeg_path");
     logger(`ffmpeg found at ${FFMPEG_BINARY_PATH}`);

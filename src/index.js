@@ -96,6 +96,54 @@ class CoordinateUtils {
       height: Math.round(coordinates.height * scale),
     };
   }
+
+  static parseCropString(cropString) {
+    // Parse crop string in format "w:h:x:y"
+    const parts = cropString.split(":");
+    if (parts.length !== 4) {
+      return null;
+    }
+
+    const [width, height, x, y] = parts.map((part) =>
+      parseInt(part.trim(), 10),
+    );
+
+    if (parts.some((part) => isNaN(parseInt(part.trim(), 10)))) {
+      return null;
+    }
+
+    return { width, height, x, y };
+  }
+
+  static cropToCoordsString(normalizedCoordinates) {
+    if (!normalizedCoordinates) {
+      return "0:0:0:0";
+    }
+    return `${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}`;
+  }
+
+  static denormalizeCoordinates(normalizedCoords, scale) {
+    return {
+      x: Math.round(normalizedCoords.x / scale),
+      y: Math.round(normalizedCoords.y / scale),
+      width: Math.round(normalizedCoords.width / scale),
+      height: Math.round(normalizedCoords.height / scale),
+    };
+  }
+
+  static coordsToClickPositions(coordinates, frameHeight) {
+    const firstClick = {
+      x: coordinates.x,
+      y: frameHeight - coordinates.y,
+    };
+
+    const secondClick = {
+      x: coordinates.x + coordinates.width,
+      y: frameHeight - (coordinates.y + coordinates.height),
+    };
+
+    return { firstClick, secondClick };
+  }
 }
 
 class FFMPEGCommandBuilder {
@@ -227,6 +275,24 @@ class UserPrompts {
   static confirmAction(message) {
     return utils.ask(message);
   }
+
+  static promptCropEdit(currentCrop) {
+    const helpText = `Edit Crop Area
+
+Current crop: crop=${currentCrop}
+
+Enter crop values in format: width:height:x:y
+- width: crop width in pixels
+- height: crop height in pixels  
+- x: horizontal offset from left
+- y: vertical offset from top
+
+Example: 1280:720:100:50
+
+Current crop: ${currentCrop}`;
+
+    return utils.prompt(helpText);
+  }
 }
 
 class OverlayManager {
@@ -319,6 +385,85 @@ class VideoProcessor {
   toggleCrop() {
     this.state.useCrop = !this.state.useCrop;
     core.osd(`Crop ${this.state.useCrop ? "enabled" : "disabled"}`);
+  }
+
+  editCrop() {
+    // Enable crop if not already enabled
+    if (!this.state.useCrop) {
+      this.state.useCrop = true;
+    }
+
+    // Get current crop string
+    const currentCrop = CoordinateUtils.cropToCoordsString(
+      this.state.normalizedCoordinates,
+    );
+
+    // Show prompt with current crop values
+    const userInput = UserPrompts.promptCropEdit(currentCrop);
+
+    if (!userInput) {
+      core.osd("Crop edit cancelled");
+      return;
+    }
+
+    // Parse the user input
+    const parsedCrop = CoordinateUtils.parseCropString(userInput);
+
+    if (!parsedCrop) {
+      core.osd(
+        "Invalid crop format. Please use width:height:x:y format (e.g., 1280:720:100:50)",
+      );
+      return;
+    }
+
+    // Validate crop dimensions against video dimensions
+    const { videoWidth, videoHeight } = this.state.dimensions;
+
+    if (parsedCrop.width <= 0 || parsedCrop.height <= 0) {
+      core.osd("Crop width and height must be greater than 0");
+      return;
+    }
+
+    if (parsedCrop.x < 0 || parsedCrop.y < 0) {
+      core.osd("Crop x and y coordinates must be 0 or greater");
+      return;
+    }
+
+    if (
+      parsedCrop.x + parsedCrop.width > videoWidth ||
+      parsedCrop.y + parsedCrop.height > videoHeight
+    ) {
+      core.osd(
+        `Crop area exceeds video dimensions (${videoWidth}x${videoHeight})`,
+      );
+      return;
+    }
+
+    // Set the normalized coordinates directly
+    this.state.normalizedCoordinates = parsedCrop;
+
+    // Calculate the rectangle coordinates for display
+    this.state.rectangleCoordinates = CoordinateUtils.denormalizeCoordinates(
+      parsedCrop,
+      this.state.scale,
+    );
+
+    // Calculate click positions for consistency with mouse selection
+    const { firstClick, secondClick } = CoordinateUtils.coordsToClickPositions(
+      this.state.rectangleCoordinates,
+      this.state.frame.height,
+    );
+
+    this.state.firstClickPos = firstClick;
+    this.state.secondClickPos = secondClick;
+    this.state.isWaitingForSecondClick = false;
+
+    core.osd(
+      `Crop set to: ${parsedCrop.width}:${parsedCrop.height}:${parsedCrop.x}:${parsedCrop.y}`,
+    );
+
+    // Show overlay to display the crop rectangle
+    overlayManager.show();
   }
 
   async copyCommandToClipboard() {
@@ -440,13 +585,6 @@ function setupMenus() {
 function setupOverlayMenu() {
   const subOverlayMenu = menu.item("Overlay");
 
-  // Keep playlist functionality as requested
-  subOverlayMenu.addSubMenuItem(
-    menu.item("List files", () => {
-      listFiles();
-    }),
-  );
-
   subOverlayMenu.addSubMenuItem(
     menu.item("Show Video Overlay", () => {
       core.osd("Show Video Overlay");
@@ -522,6 +660,16 @@ function setupOptionsMenu() {
     ),
   );
 
+  subOptionsMenu.addSubMenuItem(
+    menu.item(
+      "Edit crop",
+      () => {
+        videoProcessor.editCrop();
+      },
+      { keyBinding: "Meta+E" },
+    ),
+  );
+
   menu.addItem(subOptionsMenu);
 }
 
@@ -578,28 +726,6 @@ function setupFFMPEGMenu() {
   );
 
   menu.addItem(subFFMPEGMenu);
-}
-
-// Keep original playlist function as requested
-async function listFiles() {
-  const playlistDir = await utils.chooseFile("Select playlist directory", {
-    chooseDir: true,
-  });
-  const { status, stdout, stderr } = await utils.exec("/bin/bash", [
-    "-c",
-    `ls ${playlistDir}`,
-  ]);
-  const filesArray = stdout.split("\n");
-  const videoFiles = filesArray
-    .filter((file) => file.match(VIDEO_EXTENSIONS))
-    .map((file) => {
-      return `${playlistDir}/${file}`;
-    });
-
-  videoFiles.reverse().forEach((file) => {
-    playlist.add(file);
-  });
-  console.log(typeof playlist.list);
 }
 
 // Application Initialization
