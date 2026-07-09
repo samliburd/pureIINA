@@ -49,36 +49,52 @@ const App = () => {
     }, []);
 
     // --- Dynamic CSS Calculation ---
+    // --- Dynamic CSS Calculation ---
+    // --- Dynamic CSS Calculation ---
     const getBoxStyles = () => {
         // Hide the box entirely if no clicks have been registered (or if reset)
-        if (firstClick.x === 0 && firstClick.y === 0 && secondClick.x === 0 && secondClick.y === 0) {
+        // Check normalized clicks to ensure we have valid data
+        if (normFirstClick.x === 0 && normFirstClick.y === 0 && normSecondClick.x === 0 && normSecondClick.y === 0) {
             return { display: "none" };
         }
 
-        // If waiting for the second click, just draw a small dot at the first click position
+        // Prevent division by zero as a safety net
+        const safeScale = videoScale || 1;
+
+        // Convert the backend's normalized video coordinates BACK to current window pixels
+        // Because your backend did: normX = rawX * scale
+        // We do: currentDisplayX = normX / currentLiveScale
+        const currentFirstX = normFirstClick.x / safeScale;
+        const currentFirstY = normFirstClick.y / safeScale;
+        const currentSecondX = normSecondClick.x / safeScale;
+        const currentSecondY = normSecondClick.y / safeScale;
+
+        // If waiting for the second click, just draw a small dot at the calculated position
         if (isWaiting) {
             return {
-                left: `${firstClick.x - 3}px`,
-                top: `${firstClick.y - 3}px`,
+                left: `${currentFirstX - 3}px`,
+                top: `${currentFirstY - 3}px`,
                 width: "6px",
                 height: "6px",
                 borderRadius: "50%",
                 backgroundColor: "rgba(255, 105, 180, 0.8)",
-                border: "none"
+                border: "none",
+                position: "absolute"
             };
         }
 
-        // If both clicks are present, calculate the full rectangle
-        const left = Math.min(firstClick.x, secondClick.x);
-        const top = Math.min(firstClick.y, secondClick.y);
-        const width = Math.abs(firstClick.x - secondClick.x);
-        const height = Math.abs(firstClick.y - secondClick.y);
+        // If both clicks are present, calculate the full rectangle using the live mapped coordinates
+        const left = Math.min(currentFirstX, currentSecondX);
+        const top = Math.min(currentFirstY, currentSecondY);
+        const width = Math.abs(currentFirstX - currentSecondX);
+        const height = Math.abs(currentFirstY - currentSecondY);
 
         return {
             left: `${left}px`,
             top: `${top}px`,
             width: `${width}px`,
-            height: `${height}px`
+            height: `${height}px`,
+            position: "absolute"
         };
     };
 
