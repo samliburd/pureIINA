@@ -20,6 +20,14 @@ body {
   background: rgba(84, 83, 83, 0.37);
 }
 
+#cropBox {
+  position: fixed;
+  background-color: rgba(255, 105, 180, 0.5); /* Hot pink, 50% transparent */
+  border: 1px solid rgba(255, 105, 180, 0.8);
+  pointer-events: none; /* Ensures the box doesn't intercept mouse clicks */
+  z-index: 9999;
+}
+
 @media (prefers-color-scheme: dark) {
   body {
     color: #dadada;

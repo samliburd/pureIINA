@@ -1,4 +1,6 @@
-const { input, core, overlay } = iina;
+import {logger} from "./helpers";
+
+const { input, core, overlay} = iina;
 
 import { AppState, VideoProcessor } from "./core";
 import { setupMenus } from "./menus";
@@ -47,8 +49,10 @@ function startIntervals() {
   setInterval(() => {
     overlay.postMessage("update", {
       time: TimeUtils.secondsToISO(core.status.position),
+      videoFrame: core.window.frame,
       videoWidth: core.status.videoWidth,
-      videoHeight: core.status.videoHeight
+      videoHeight: core.status.videoHeight,
+      scale: appState.scale || 1 // <-- Added scale here
     });
   }, 500);
 
@@ -57,11 +61,27 @@ function startIntervals() {
   }, 500);
 }
 
-// Renamed slightly for clarity, bundles both clicks and the waiting status
 function sendClickState() {
+  // Use the scale calculated by videoProcessor (fallback to 1 if it hasn't calculated yet)
+  const scale = appState.scale || 1;
+
   overlay.postMessage("click", {
     firstClick: appState.firstClickPos,
     secondClick: appState.secondClickPos,
+
+    // Normalize the individual clicks using the backend's scale
+    normFirstClick: {
+      x: Math.round(appState.firstClickPos.x * scale),
+      y: Math.round(appState.firstClickPos.y * scale)
+    },
+    normSecondClick: {
+      x: Math.round(appState.secondClickPos.x * scale),
+      y: Math.round(appState.secondClickPos.y * scale)
+    },
+
+    // Send the final crop rectangle already calculated by CoordinateUtils in core.js
+    cropBox: appState.normalizedCoordinates,
+
     isWaiting: appState.isWaitingForSecondClick
   });
 }

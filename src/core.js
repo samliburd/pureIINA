@@ -17,7 +17,7 @@ export class AppState {
     this.timeArr = [DEFAULT_START_TIME, this.getFormattedDuration()];
     this.outputDir = preferences.get("output_dir");
     this.outputFilename = "";
-    this.useCrop = false;
+    this.useCrop = true;
     this.startTime = DEFAULT_START_TIME;
     this.endTime = this.getFormattedDuration();
   }
@@ -238,6 +238,11 @@ export class VideoProcessor {
       );
       return;
     }
+    const toEven = (val) => Math.round(val / 2) * 2;
+    parsedCrop.width = toEven(parsedCrop.width);
+    parsedCrop.height = toEven(parsedCrop.height);
+    parsedCrop.x = toEven(parsedCrop.x);
+    parsedCrop.y = toEven(parsedCrop.y);
 
     this.state.normalizedCoordinates = parsedCrop;
 

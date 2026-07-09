@@ -26,11 +26,14 @@ export class CoordinateUtils {
   }
 
   static getNormalizedCoordinates(coordinates, scale) {
+    // Helper function to force rounding to the nearest even integer
+    const toEven = (val) => Math.round(val / 2) * 2;
+
     return {
-      x: Math.round(coordinates.x * scale),
-      y: Math.round(coordinates.y * scale),
-      width: Math.round(coordinates.width * scale),
-      height: Math.round(coordinates.height * scale),
+      x: toEven(coordinates.x * scale),
+      y: toEven(coordinates.y * scale),
+      width: toEven(coordinates.width * scale),
+      height: toEven(coordinates.height * scale),
     };
   }
 
