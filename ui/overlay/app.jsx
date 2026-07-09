@@ -1,12 +1,11 @@
 import React from "react";
+import '../shared.scss';
 
 const App = () => (
-  <div
-    style={{ padding: "20px", background: "rgba(0,0,0,0.5)", color: "white" }}
-  >
-    <h1>Hello world!</h1>
-    <p>This is a simple React overlay.</p>
-  </div>
+    <div>
+        <h1>Hello!</h1>
+        <p>This is a video overlay.</p>
+    </div>
 );
 
 export default App;

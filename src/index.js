@@ -637,9 +637,32 @@ function setupFFMPEGMenu() {
   menu.addItem(subFFMPEGMenu);
 }
 
+function setupOverlayMenu() {
+  const subOverlayMenu = menu.item("Overlay");
+
+  subOverlayMenu.addSubMenuItem(
+    menu.item("Initialise overlay", () => {
+      overlay.loadFile("dist/ui/overlay/index.html");
+    }),
+  );
+  subOverlayMenu.addSubMenuItem(
+    menu.item("Show Video Overlay", () => {
+      overlay.show()
+    }),
+  );
+  subOverlayMenu.addSubMenuItem(
+    menu.item("Hide Video Overlay", () => {
+      overlay.hide()
+    }),
+  );
+  menu.addItem(subOverlayMenu)
+}
+
+
 function setupMenus() {
   setupOptionsMenu();
   setupFFMPEGMenu();
+  setupOverlayMenu();
 }
 
 function initialize() {
