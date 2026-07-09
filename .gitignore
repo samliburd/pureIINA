@@ -3,7 +3,6 @@ PUREIINA
 ###
 
 iina-plugin-definition/
-wiki/
 
 # Node dependencies
 node_modules/
@@ -41,7 +40,7 @@ pnpm-lock.yaml
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
