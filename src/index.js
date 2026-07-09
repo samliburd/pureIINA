@@ -637,14 +637,21 @@ function setupFFMPEGMenu() {
   menu.addItem(subFFMPEGMenu);
 }
 
+// Existing time update interval
+function postTimeUpdate() {
+  overlay.postMessage("update", {
+    time: TimeUtils.secondsToISO(core.status.position),
+    videoWidth: core.status.videoWidth,
+    videoHeight: core.status.videoHeight
+  });
+}
+setInterval(postTimeUpdate, 500);
+
 function setupOverlayMenu() {
+  overlay.loadFile("dist/ui/overlay/index.html")
+
   const subOverlayMenu = menu.item("Overlay");
 
-  subOverlayMenu.addSubMenuItem(
-    menu.item("Initialise overlay", () => {
-      overlay.loadFile("dist/ui/overlay/index.html");
-    }),
-  );
   subOverlayMenu.addSubMenuItem(
     menu.item("Show Video Overlay", () => {
       overlay.show()
