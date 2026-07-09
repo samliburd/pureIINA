@@ -27,11 +27,7 @@
   "entry": "src/index.js",
   "targets": {
     "main": false,
-    "window": {
-      "distDir": "./dist/ui/window",
-      "source": "ui/window/index.html",
-      "publicUrl": "./"
-    },
+
     "overlay": {
       "distDir": "./dist/ui/overlay",
       "source": "ui/overlay/index.html",
