@@ -9,6 +9,7 @@ const {
   file,
   preferences,
   playlist,
+  event,
 } = iina;
 import * as helpers from "./helpers";
 
@@ -288,15 +289,11 @@ class FFMPEGCommandBuilder {
 class OverlayManager {
   constructor(state) {
     this.state = state;
-    this._initialize();
   }
 
   _initialize() {
     overlay.loadFile("dist/ui/overlay/index.html");
-    // Only set clickable if you want the user to interact with it
-    // For just displaying info, false is better.
     overlay.setClickable(false);
-    overlay.show();
   }
 
   updateOverlay() {
@@ -695,6 +692,11 @@ function setupMenus() {
 function initialize() {
   setupEventListeners();
   setupMenus();
+
+  event.on("iina.window-loaded", () => {
+    overlayManager._initialize();
+    overlayManager.show();
+  });
 
   // Periodic updates
   setInterval(() => {
