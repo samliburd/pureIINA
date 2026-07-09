@@ -4,6 +4,7 @@ PUREIINA
 
 iina-plugin-definition/
 wiki/
+code.md
 
 # Node dependencies
 node_modules/

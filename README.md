@@ -4,6 +4,9 @@
 
 This is incredibly useful for users who want to quickly extract a specific scene or crop a portion of a video without needing to use a heavy video editing suite or manually guess crop coordinates for FFmpeg.
 
+Wouldn't have been possible without the excellent work here:
+https://github.com/4ndrs/PureMPV
+
 ## Core Features
 
 - **Time Trimming:** Set precise start and end times for the video segment you wish to extract.
