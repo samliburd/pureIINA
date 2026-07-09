@@ -3,6 +3,7 @@ PUREIINA
 ###
 
 iina-plugin-definition/
+wiki/
 
 # Node dependencies
 node_modules/
