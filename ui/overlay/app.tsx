@@ -173,9 +173,24 @@ const App = () => {
                         </div>
                     </div>
                 )}
+
+                {/* 5. Shortcuts Help Panel */}
+                <div className="hud-panel">
+                    <h4>Shortcuts</h4>
+                    <div className="flex-row" style={{ gap: "10px" }}>
+                        <div className="shortcut-item"><span className="kbd-key">C</span> Cancel 2nd Click</div>
+                        <div className="shortcut-item"><span className="kbd-key">⌥C</span> Reset Crop</div>
+                        <div className="shortcut-item"><span className="kbd-key">U</span> Set Start</div>
+                        <div className="shortcut-item"><span className="kbd-key">⌘U</span> Set End</div>
+                        <div className="shortcut-item"><span className="kbd-key">⌘T</span> Toggle Crop</div>
+                        <div className="shortcut-item"><span className="kbd-key">⌥K</span> Copy Command</div>
+                        <div className="shortcut-item"><span className="kbd-key">⇧⌘R</span> Run FFmpeg</div>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
+
 
 export default App;

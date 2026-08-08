@@ -1,4 +1,4 @@
-const { input, core, overlay } = iina;
+const { input, core, overlay, event, utils } = iina;
 
 import { AppState, VideoProcessor } from "./core";
 import { setupMenus } from "./menus";
@@ -47,6 +47,9 @@ function setupEventListeners() {
     videoProcessor.copyCommandToClipboard();
     return true;
   });
+  // const windowChange = event.on("iina.window-resized", () => {
+  //     core.osd("Window resized")
+  // })
 }
 
 function startIntervals() {
@@ -89,6 +92,14 @@ function sendClickState() {
     isWaiting: appState.isWaitingForSecondClick,
   });
 }
+function checkKeybind() {
+    const keybind = utils.prompt("Please enter a key combo: ");
+const kc = input.normalizeKeyCode(keybind);
+         if (input.getAllKeyBindings()[kc]) {
+             core.osd("Key in use");
+    }
+
+}
 
 function initialize() {
   overlay.loadFile("dist/ui/overlay/index.html");
@@ -96,6 +107,7 @@ function initialize() {
   setupEventListeners();
   setupMenus(appState, videoProcessor);
   startIntervals();
+  checkKeybind()
 }
 
 initialize();
