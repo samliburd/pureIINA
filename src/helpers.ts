@@ -5,26 +5,26 @@ const { core, console, http, utils, file, preferences } = iina;
 const FFMPEG_URL = "https://evermeet.cx/ffmpeg/get/ffmpeg/zip";
 const FFMPEG_ZIP_PATH = utils.resolvePath("@tmp/ffmpeg.zip");
 const BINARY_DIR_PATH = utils.resolvePath("@data/bin/");
-let FFMPEG_BINARY_PATH,
+let FFMPEG_BINARY_PATH: string | undefined,
   helpTextShown = false;
 
-export function logger(msg) {
+export function logger(msg: string): void {
   console.log(msg);
   core.osd(msg);
 }
 
-export async function downloadFFMPEG() {
+export async function downloadFFMPEG(): Promise<boolean | string> {
   try {
     await http.download(FFMPEG_URL, FFMPEG_ZIP_PATH);
     console.log(`ffmpeg downloaded to ${FFMPEG_ZIP_PATH}`);
     return true;
-  } catch (e) {
+  } catch (e: any) {
     console.log(e);
     return e.toString();
   }
 }
 
-export async function unzip() {
+export async function unzip(): Promise<number | undefined> {
   try {
     // Execute the unzip command
     const { status, stdout, stderr } = await utils.exec("/usr/bin/unzip", [
@@ -43,13 +43,13 @@ export async function unzip() {
       // logger(`Error extracting ffmpeg: ${stderr || stdout}`);
     }
     return status;
-  } catch (error) {
+  } catch (error: any) {
     // If there's an exception during the command execution, display the error
     logger(`Unzip failed: ${error.message}`);
   }
 }
 
-export async function initFFMPEG() {
+export async function initFFMPEG(): Promise<void> {
   if (!helpTextShown) {
     utils.ask(`If \`ffmpeg_path\` is not set in the plugin's preferences (⌘,) this function will try to find ffmpeg in the plugin's data dir and then the system $PATH.
   \n\nIf it is not in either location it will prompt to download ffmpeg to the data dir.\n\n
@@ -88,7 +88,7 @@ export async function initFFMPEG() {
             logger(`ffmpeg found at: ${FFMPEG_BINARY_PATH}`);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         logger(`Could not find ffmpeg: ${error.message}`);
       }
     }
@@ -102,7 +102,7 @@ export async function initFFMPEG() {
   }
 }
 
-export async function callFFMPEG(options) {
+export async function callFFMPEG(options: string[]): Promise<{ status: number; stdout: string; stderr: string }> {
   const ffmpegOptions = ["-hide_banner", "-loglevel", "warning", "-y"];
   console.log("\n\n\n\n\nOPTIONS:\n\n\n\n");
   console.log([...ffmpegOptions, ...options]);
@@ -115,14 +115,14 @@ export async function callFFMPEG(options) {
     console.log(stdout);
     console.log(stderr);
     return { status, stdout, stderr };
-  } catch (error) {
+  } catch (error: any) {
     logger(`${stderr || error}`);
     return { status: 1, stdout: "", stderr: error.stderr || error };
   }
 }
 
 // export function chmod() {}
-export function findBinary() {
+export function findBinary(): string {
   let path = "ffmpeg";
   const searchList = ["@data/ffmpeg", "ffmpeg"];
   for (const item of searchList) {

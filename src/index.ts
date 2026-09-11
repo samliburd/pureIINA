@@ -3,12 +3,13 @@ const { input, core, overlay, event, utils, file, console } = iina;
 import { AppState, VideoProcessor } from "./core";
 import { setupMenus } from "./menus";
 import { TimeUtils } from "./utils";
+import { IPCUpdateMessage, IPCClickMessage } from "./types";
 
 // Initialize Core Logic
 const appState = new AppState();
 const videoProcessor = new VideoProcessor(appState);
 
-function setupEventListeners() {
+function setupEventListeners(): void {
     input.onMouseDown(input.MOUSE, () => {
         input.onMouseUp(input.MOUSE, ({ x, y }: { x: number; y: number }) => {
             // 1. Let the processor sort out where this click belongs
@@ -56,15 +57,16 @@ function setupEventListeners() {
     // })
 }
 
-function startIntervals() {
+function startIntervals(): void {
     setInterval(() => {
-        overlay.postMessage("update", {
-            time: TimeUtils.secondsToISO(core.status.position),
+        const payload: IPCUpdateMessage = {
+            time: TimeUtils.secondsToISO(core.status.position || 0),
             videoFrame: core.window.frame,
-            videoWidth: core.status.videoWidth,
-            videoHeight: core.status.videoHeight,
+            videoWidth: core.status.videoWidth || 0,
+            videoHeight: core.status.videoHeight || 0,
             scale: appState.scale || 1, // <-- Added scale here
-        });
+        };
+        overlay.postMessage("update", payload);
     }, 500);
 
     setInterval(() => {
@@ -72,11 +74,11 @@ function startIntervals() {
     }, 500);
 }
 
-function sendClickState() {
+function sendClickState(): void {
     // Use the scale calculated by videoProcessor (fallback to 1 if it hasn't calculated yet)
     const scale = appState.scale || 1;
 
-    overlay.postMessage("click", {
+    const payload: IPCClickMessage = {
         firstClick: appState.firstClickPos,
         secondClick: appState.secondClickPos,
 
@@ -94,10 +96,12 @@ function sendClickState() {
         cropBox: appState.normalizedCoordinates,
 
         isWaiting: appState.isWaitingForSecondClick,
-    });
+    };
+
+    overlay.postMessage("click", payload);
 }
 
-function exportAllKeybinds() {
+function exportAllKeybinds(): void {
     const allBindings = input.getAllKeyBindings();
 
     // Initialize the CSV headers (added a leading newline to separate from the console timestamp)
@@ -131,7 +135,7 @@ function exportAllKeybinds() {
 
 
 
-function initialize() {
+function initialize(): void {
     overlay.loadFile("dist/ui/overlay/index.html");
 
     setupEventListeners();

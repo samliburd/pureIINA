@@ -6,6 +6,8 @@
   "scripts": {
     "serve-overlay": "parcel serve ui/overlay/index.html --dist-dir dist/ui/overlay",
     "build": "rm -rf dist .parcel-cache && parcel build . --no-content-hash",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

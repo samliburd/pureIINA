@@ -1,17 +1,18 @@
 const { core, utils } = iina;
 import { FFMPEG_DEFAULTS } from "./constants";
+import { Point, Rect } from "./types";
 
 export class TimeUtils {
-  static secondsToISO(time) {
+  static secondsToISO(time: number): string {
     return new Date(time * 1000).toISOString().substring(11, 23);
   }
-  static getCurrentTimePosition() {
-    return TimeUtils.secondsToISO(core.status.position);
+  static getCurrentTimePosition(): string {
+    return TimeUtils.secondsToISO(core.status.position || 0);
   }
 }
 
 export class CoordinateUtils {
-  static getRectangleCoordinates(firstClick, secondClick) {
+  static getRectangleCoordinates(firstClick: Point, secondClick: Point): Rect {
     const x1 = firstClick.x;
     const y1 = firstClick.y;
     const x2 = secondClick.x;
@@ -25,9 +26,9 @@ export class CoordinateUtils {
     };
   }
 
-  static getNormalizedCoordinates(coordinates, scale) {
+  static getNormalizedCoordinates(coordinates: Rect, scale: number): Rect {
     // Helper function to force rounding to the nearest even integer
-    const toEven = (val) => Math.round(val / 2) * 2;
+    const toEven = (val: number) => Math.round(val / 2) * 2;
 
     return {
       x: toEven(coordinates.x * scale),
@@ -37,7 +38,7 @@ export class CoordinateUtils {
     };
   }
 
-  static parseCropString(cropString) {
+  static parseCropString(cropString: string): Rect | null {
     const parts = cropString.split(":");
     if (parts.length !== 4) {
       return null;
@@ -54,14 +55,14 @@ export class CoordinateUtils {
     return { width, height, x, y };
   }
 
-  static cropToCoordsString(normalizedCoordinates) {
+  static cropToCoordsString(normalizedCoordinates: Rect | null): string {
     if (!normalizedCoordinates) {
       return "0:0:0:0";
     }
     return `${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}`;
   }
 
-  static denormalizeCoordinates(normalizedCoords, scale) {
+  static denormalizeCoordinates(normalizedCoords: Rect, scale: number): Rect {
     return {
       x: Math.round(normalizedCoords.x / scale),
       y: Math.round(normalizedCoords.y / scale),
@@ -70,7 +71,7 @@ export class CoordinateUtils {
     };
   }
 
-  static coordsToClickPositions(coordinates, frameHeight) {
+  static coordsToClickPositions(coordinates: Rect, frameHeight: number): { firstClick: Point, secondClick: Point } {
     const firstClick = {
       x: coordinates.x,
       y: frameHeight - coordinates.y,
@@ -88,12 +89,12 @@ export class CoordinateUtils {
 }
 
 export class UserPrompts {
-  static promptOutputFilename(currentFilename) {
+  static promptOutputFilename(currentFilename: string): string | null {
     const fn = utils.prompt(`Please enter the file name\n\n${currentFilename}`);
     return fn ? `${fn}.${FFMPEG_DEFAULTS.container}` : null;
   }
 
-  static async promptOutputDir() {
+  static async promptOutputDir(): Promise<string | null> {
     try {
       const tempOutput = await utils.chooseFile(
         "Please select the output directory\n",
@@ -111,16 +112,16 @@ export class UserPrompts {
     }
   }
 
-  static confirmAction(message) {
+  static confirmAction(message: string): boolean {
     return utils.ask(message);
   }
 
-  static promptCropEdit(currentCrop) {
+  static promptCropEdit(currentCrop: string): string | null {
     const helpText = `Edit Crop Area\n\nCurrent crop: crop=${currentCrop}\n\nEnter crop values in format: width:height:x:y\nExample: 1280:720:100:50\n\nCurrent crop: ${currentCrop}`;
-    return utils.prompt(helpText);
+    return utils.prompt(helpText) || null;
   }
 
-  static showCommand(message) {
+  static showCommand(message: string): boolean {
     return utils.ask(message);
   }
 }

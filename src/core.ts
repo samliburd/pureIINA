@@ -6,19 +6,20 @@ import {
 } from "./constants";
 import { TimeUtils, CoordinateUtils, UserPrompts } from "./utils";
 import * as helpers from "./helpers";
+import { Dimensions, Point, Rect, FFMPEGCommandResult } from "./types";
 
 export class AppState {
-  dimensions: any = null;
-  frame: any = null;
-  scale: any = null;
-  rectangleCoordinates: any = null;
-  normalizedCoordinates: any = null;
-  firstClickPos: { x: number; y: number } = { x: 0, y: 0 };
-  secondClickPos: { x: number; y: number } = { x: 0, y: 0 };
+  dimensions: Dimensions | null = null;
+  frame: Rect | null = null;
+  scale: number | null = null;
+  rectangleCoordinates: Rect | null = null;
+  normalizedCoordinates: Rect | null = null;
+  firstClickPos: Point = { x: 0, y: 0 };
+  secondClickPos: Point = { x: 0, y: 0 };
   isWaitingForSecondClick: boolean = false;
   isHidden: boolean = true;
   timeArr: string[];
-  outputDir: any;
+  outputDir: string | null;
   outputFilename: string = "";
   useCrop: boolean = false;
   startTime: string;
@@ -45,15 +46,15 @@ export class AppState {
     this.endTime = this.getFormattedDuration();
   }
 
-  getFormattedDuration() {
-    return TimeUtils.secondsToISO(core.status.duration);
+  getFormattedDuration(): string {
+    return TimeUtils.secondsToISO(core.status.duration || 0);
   }
 
-  getCurrentFilename() {
+  getCurrentFilename(): string {
     return decodeURIComponent(core.status.url.replace("file://", ""));
   }
 
-  getInputFileDirectory() {
+  getInputFileDirectory(): string | null {
     const url = core.status.url;
     if (!url || !url.startsWith("file://")) return null;
 
@@ -61,7 +62,7 @@ export class AppState {
     return decodedPath.substring(0, decodedPath.lastIndexOf("/"));
   }
 
-  reset() {
+  reset(): void {
     this.firstClickPos = { x: 0, y: 0 };
     this.secondClickPos = { x: 0, y: 0 };
     this.isWaitingForSecondClick = false;
@@ -75,8 +76,8 @@ export class FFMPEGCommandBuilder {
     this.state = state;
   }
 
-  validate() {
-    const errors = [];
+  validate(): string[] {
+    const errors: string[] = [];
 
     if (!this.state.timeArr[0] || !this.state.timeArr[1]) {
       errors.push("Start and end times must be set");
@@ -89,7 +90,7 @@ export class FFMPEGCommandBuilder {
     return errors;
   }
 
-  buildCommand(direct = false) {
+  buildCommand(direct: boolean = false): FFMPEGCommandResult | string | null {
     const validationErrors = this.validate();
     if (validationErrors.length > 0) {
       core.osd(`Error: ${validationErrors.join(", ")}`);
@@ -105,7 +106,7 @@ export class FFMPEGCommandBuilder {
     }
   }
 
-  _buildDirectCommand(filename) {
+  _buildDirectCommand(filename: string): FFMPEGCommandResult | null {
     if (!this.state.outputFilename) {
       const promptedFilename = UserPrompts.promptOutputFilename(filename);
       if (!promptedFilename) {
@@ -138,12 +139,13 @@ export class FFMPEGCommandBuilder {
       filename,
     ];
 
-    const videoArgs = this.state.useCrop
-      ? [
-          "-vf",
-          `crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}`,
-        ]
-      : [];
+    const videoArgs =
+      this.state.useCrop && this.state.normalizedCoordinates
+        ? [
+            "-vf",
+            `crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}`,
+          ]
+        : [];
 
     const encodingArgs = [
       "-c:v",
@@ -173,9 +175,10 @@ export class FFMPEGCommandBuilder {
     };
   }
 
-  _buildClipboardCommand(filename) {
+  _buildClipboardCommand(filename: string): string {
     const escapedFilename = filename.replace(REGEX_WHITESPACE, "\\ ");
     const cropFilter = this.state.useCrop
+      && this.state.normalizedCoordinates
       ? `-vf "crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}" \\`
       : "\\";
 
@@ -192,7 +195,9 @@ export class VideoProcessor {
     this.commandBuilder = new FFMPEGCommandBuilder(state);
   }
 
-  updateVideoVariables() {
+  updateVideoVariables(): void {
+    if (!core.window.frame || !core.status.videoWidth || !core.status.videoHeight) return;
+
     this.state.dimensions = {
       videoWidth: core.status.videoWidth,
       videoHeight: core.status.videoHeight,
@@ -214,7 +219,7 @@ export class VideoProcessor {
     }
   }
 
-  handleMouseClick(x, y) {
+  handleMouseClick(x: number, y: number): void {
     if (!this.state.useCrop) return;
 
     core.osd(x.toString());
@@ -230,18 +235,18 @@ export class VideoProcessor {
     }
   }
 
-  setTimePosition(index) {
+  setTimePosition(index: number): string {
     const timePos = TimeUtils.getCurrentTimePosition();
     this.state.timeArr[index] = timePos;
     return timePos;
   }
 
-  toggleCrop() {
+  toggleCrop(): void {
     this.state.useCrop = !this.state.useCrop;
     core.osd(`Crop ${this.state.useCrop ? "enabled" : "disabled"}`);
   }
 
-  editCrop() {
+  editCrop(): void {
     if (!this.state.useCrop) {
       this.state.useCrop = true;
     }
@@ -266,6 +271,7 @@ export class VideoProcessor {
       return;
     }
 
+    if (!this.state.dimensions) return;
     const { videoWidth, videoHeight } = this.state.dimensions;
 
     if (parsedCrop.width <= 0 || parsedCrop.height <= 0) {
@@ -287,13 +293,15 @@ export class VideoProcessor {
       );
       return;
     }
-    const toEven = (val) => Math.round(val / 2) * 2;
+    const toEven = (val: number) => Math.round(val / 2) * 2;
     parsedCrop.width = toEven(parsedCrop.width);
     parsedCrop.height = toEven(parsedCrop.height);
     parsedCrop.x = toEven(parsedCrop.x);
     parsedCrop.y = toEven(parsedCrop.y);
 
     this.state.normalizedCoordinates = parsedCrop;
+
+    if (!this.state.scale || !this.state.frame) return;
 
     this.state.rectangleCoordinates = CoordinateUtils.denormalizeCoordinates(
       parsedCrop,
@@ -314,7 +322,7 @@ export class VideoProcessor {
     );
   }
 
-  async copyCommandToClipboard() {
+  async copyCommandToClipboard(): Promise<void> {
     if (
       this.state.useCrop &&
       (this.state.secondClickPos.x === 0 || this.state.secondClickPos.y === 0)
@@ -350,7 +358,7 @@ export class VideoProcessor {
     }
   }
 
-  async executeFFMPEG() {
+  async executeFFMPEG(): Promise<void> {
     const commandResult = this.commandBuilder.buildCommand(true);
     if (
       !commandResult ||

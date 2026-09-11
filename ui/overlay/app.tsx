@@ -1,5 +1,6 @@
 import "../shared.scss";
 import React, { useState, useEffect } from "react";
+import { IPCUpdateMessage, IPCClickMessage } from "../../src/types";
 
 const App = () => {
     const [currentTime, setCurrentTime] = useState("00:00:00.000");
@@ -18,7 +19,7 @@ const App = () => {
 
     useEffect(() => {
         if (window.iina) {
-            window.iina.onMessage("update", (data: any) => {
+            window.iina.onMessage("update", (data: IPCUpdateMessage) => {
                 setCurrentTime(data.time);
                 setVideoFrame(data.videoFrame);
 
@@ -39,7 +40,7 @@ const App = () => {
                 }
             });
 
-            window.iina.onMessage("click", (data: any) => {
+            window.iina.onMessage("click", (data: IPCClickMessage) => {
                 setFirstClick(data.firstClick);
                 setSecondClick(data.secondClick);
                 setNormFirstClick(data.normFirstClick);

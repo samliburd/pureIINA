@@ -1,12 +1,12 @@
 const { menu, core, preferences, overlay, console } = iina;
 import { UserPrompts } from "./utils";
-import { FFMPEGCommandBuilder } from "./core";
+import { AppState, VideoProcessor, FFMPEGCommandBuilder } from "./core";
 import * as helpers from "./helpers";
 
 // Track visibility for the toggle shortcut
 let isOverlayVisible = true;
 
-export function setupMenus(appState, videoProcessor) {
+export function setupMenus(appState: AppState, videoProcessor: VideoProcessor): void {
     // 1. Options Menu
     const subOptionsMenu = menu.item("Options");
 
@@ -36,12 +36,13 @@ export function setupMenus(appState, videoProcessor) {
     subOptionsMenu.addSubMenuItem(
         menu.item(
             "Set output directory",
-            async () => {
-                const newDir = await UserPrompts.promptOutputDir();
-                if (newDir) {
-                    appState.outputDir = newDir;
-                    core.osd(`Output directory: ${newDir}`);
-                }
+            () => {
+                void UserPrompts.promptOutputDir().then((newDir) => {
+                    if (newDir) {
+                        appState.outputDir = newDir;
+                        core.osd(`Output directory: ${newDir}`);
+                    }
+                });
             },
             { keyBinding: "Alt+d" }
         ),
@@ -127,8 +128,8 @@ export function setupMenus(appState, videoProcessor) {
     subFFMPEGMenu.addSubMenuItem(
         menu.item(
             "Run ffmpeg",
-            async () => {
-                await videoProcessor.executeFFMPEG();
+            () => {
+                void videoProcessor.executeFFMPEG();
             },
             { keyBinding: "Command+Shift+R" },
         ),
