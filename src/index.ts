@@ -49,6 +49,8 @@ function setupEventListeners() {
         return true;
     });
 
+
+
     // const windowChange = event.on("iina.window-resized", () => {
     //     core.osd("Window resized")
     // })
@@ -97,29 +99,36 @@ function sendClickState() {
 
 function exportAllKeybinds() {
     const allBindings = input.getAllKeyBindings();
-    let exportText = "--- IINA Keybindings Export ---\n\n";
 
-    // Loop through the dictionary and format each entry
+    // Initialize the CSV headers (added a leading newline to separate from the console timestamp)
+    let exportText = "\nKey Code,Action,Is IINA Command\n";
+
+    // Loop through the dictionary and format each entry as a CSV row
     for (const [keyCode, binding] of Object.entries(allBindings)) {
-        // Add each binding to our text string
-        exportText += `Key Code: ${keyCode}\n`;
-        exportText += `Action: ${binding.action}\n`;
-        exportText += `Is IINA Command: ${binding.isIINACommand ? "Yes" : "No"}\n`;
-        exportText += `---------------------------\n`;
+        const isIINA = binding.isIINACommand ? "Yes" : "No";
+
+        // Standard CSV escaping: wrap fields in quotes and escape internal quotes by doubling them ("")
+        const safeKeyCode = `"${keyCode.replace(/"/g, '""')}"`;
+        const safeAction = `"${binding.action.replace(/"/g, '""')}"`;
+        const safeIsIINA = `"${isIINA}"`;
+
+        // Add the formatted row
+        exportText += `${safeKeyCode},${safeAction},${safeIsIINA}\n`;
     }
 
-    // OPTION 1: Dump to the Plugin Console (Recommended)
-    // You can view and copy this by opening IINA > Preferences > Plugins > Inspector
+    // Dump to the Plugin Console
     console.log(exportText);
 
-    // OPTION 2: Write to a file (if you have the 'file' module imported)
+    // OPTION 2: Write directly to a CSV file (if you have the 'file' module imported)
     // const { file } = iina;
-    // const exportPath = file.appConfigDir + "/iina_keybindings.txt";
-    // file.write(exportPath, exportText);
+    // const exportPath = file.appConfigDir + "/iina_keybindings.csv";
+    // file.write(exportPath, exportText.trim()); // trim removes the leading newline for the file
     // core.osd(`Exported to: ${exportPath}`);
 
-    core.osd("Keybindings exported to console!");
+    core.osd("Keybindings exported to console as CSV!");
 }
+
+
 
 
 function initialize() {
@@ -128,7 +137,7 @@ function initialize() {
     setupEventListeners();
     setupMenus(appState, videoProcessor);
     startIntervals();
-    exportAllKeybinds();
+    // exportAllKeybinds();
 }
 
 initialize();
