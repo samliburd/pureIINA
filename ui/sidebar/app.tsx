@@ -14,7 +14,10 @@ const App = () => {
   const [filename, setFilename] = useState('');
   const [command, setCommand] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
-  const [resultMessage, setResultMessage] = useState<{ text: string, error: boolean } | null>(null);
+  const [resultMessage, setResultMessage] = useState<{
+    text: string;
+    error: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (window.iina) {
@@ -44,7 +47,7 @@ const App = () => {
       );
       window.iina.onMessage(
         'ffmpeg-result',
-        (data: { message: string, error: boolean }) => {
+        (data: { message: string; error: boolean }) => {
           setResultMessage({ text: data.message, error: data.error });
         }
       );
@@ -136,7 +139,11 @@ const App = () => {
         <button onClick={handleShowCommand} className="action-btn">
           Show Command
         </button>
-        <button onClick={handleRunFFmpeg} className="primary-btn" disabled={progress !== null}>
+        <button
+          onClick={handleRunFFmpeg}
+          className="primary-btn"
+          disabled={progress !== null}
+        >
           {progress !== null ? 'Running...' : 'Run FFmpeg'}
         </button>
       </div>
@@ -144,7 +151,10 @@ const App = () => {
       {progress !== null && (
         <div className="progress-container">
           <div className="progress-bar-bg">
-            <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
           <span className="progress-text">{progress.toFixed(1)}%</span>
         </div>
@@ -157,7 +167,9 @@ const App = () => {
       )}
 
       {resultMessage && (
-        <div className={`result-message ${resultMessage.error ? 'error' : 'success'}`}>
+        <div
+          className={`result-message ${resultMessage.error ? 'error' : 'success'}`}
+        >
           {resultMessage.text}
         </div>
       )}
