@@ -1,4 +1,4 @@
-const { core, preferences, utils, sidebar } = iina;
+const { core, preferences, utils, sidebar, mpv } = iina;
 import {
   DEFAULT_START_TIME,
   FFMPEG_DEFAULTS,
@@ -25,6 +25,7 @@ export class AppState {
   showHud: boolean = false;
   startTime: string;
   endTime: string;
+  isHDR: boolean = false;
 
   constructor() {
     this.dimensions = null;
@@ -140,17 +141,33 @@ export class FFMPEGCommandBuilder {
       filename,
     ];
 
-    const videoArgs =
-      this.state.useCrop && this.state.normalizedCoordinates
-        ? [
-            "-vf",
-            `crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}`,
-          ]
-        : [];
+    let filterString = "";
+    if (this.state.useCrop && this.state.normalizedCoordinates) {
+      filterString += `crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}`;
+    }
+
+    if (this.state.isHDR) {
+      const hdrFilter = "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p";
+      filterString = filterString ? `${filterString},${hdrFilter}` : hdrFilter;
+    }
+
+    const videoArgs = filterString ? ["-vf", filterString] : [];
 
     const encodingArgs = [
       "-c:v",
       FFMPEG_DEFAULTS.codec,
+      ...(this.state.isHDR
+        ? [
+            "-pix_fmt",
+            "yuv420p",
+            "-colorspace",
+            "bt709",
+            "-color_primaries",
+            "bt709",
+            "-color_trc",
+            "bt709",
+          ]
+        : []),
       "-crf",
       FFMPEG_DEFAULTS.crf.toString(),
       "-preset",
@@ -178,12 +195,22 @@ export class FFMPEGCommandBuilder {
 
   _buildClipboardCommand(filename: string): string {
     const escapedFilename = filename.replace(REGEX_WHITESPACE, "\\ ");
-    const cropFilter = this.state.useCrop
-      && this.state.normalizedCoordinates
-      ? `-vf "crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}" \\`
-      : "\\";
+    
+    let filterString = "";
+    if (this.state.useCrop && this.state.normalizedCoordinates) {
+      filterString += `crop=${this.state.normalizedCoordinates.width}:${this.state.normalizedCoordinates.height}:${this.state.normalizedCoordinates.x}:${this.state.normalizedCoordinates.y}`;
+    }
 
-    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${escapedFilename} ${cropFilter}\n-c:v ${FFMPEG_DEFAULTS.codec} -crf ${FFMPEG_DEFAULTS.crf} -preset ${FFMPEG_DEFAULTS.preset} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${this.state.outputFilename} && echo ${this.state.outputFilename}`;
+    if (this.state.isHDR) {
+      const hdrFilter = "zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format=yuv420p";
+      filterString = filterString ? `${filterString},${hdrFilter}` : hdrFilter;
+    }
+
+    const cropFilter = filterString ? `-vf "${filterString}" \\` : "\\";
+    
+    const colorArgs = this.state.isHDR ? "-pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 " : "";
+
+    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${escapedFilename} ${cropFilter}\n-c:v ${FFMPEG_DEFAULTS.codec} ${colorArgs}-crf ${FFMPEG_DEFAULTS.crf} -preset ${FFMPEG_DEFAULTS.preset} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${this.state.outputFilename} && echo ${this.state.outputFilename}`;
   }
 }
 
@@ -217,6 +244,16 @@ export class VideoProcessor {
           this.state.rectangleCoordinates,
           this.state.scale,
         );
+    }
+
+    try {
+      const videoParams = mpv.getNative<Record<string, any>>("video-params") || {};
+      const gamma = videoParams["gamma"] || mpv.getString("video-params/gamma");
+      const sigPeak = videoParams["sig-peak"];
+      
+      this.state.isHDR = gamma === "smpte2084" || gamma === "pq" || gamma === "arib-std-b67" || gamma === "hlg" || (sigPeak && Number(sigPeak) > 1) ? true : false;
+    } catch {
+      this.state.isHDR = false;
     }
   }
 
