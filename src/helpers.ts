@@ -102,14 +102,33 @@ export async function initFFMPEG(): Promise<void> {
   }
 }
 
-export async function callFFMPEG(options: string[]): Promise<{ status: number; stdout: string; stderr: string }> {
-  const ffmpegOptions = ["-hide_banner", "-loglevel", "warning", "-y"];
+export async function callFFMPEG(
+  options: string[],
+  onProgress?: (timeUs: number) => void
+): Promise<{ status: number; stdout: string; stderr: string }> {
+  let ffmpegOptions = ["-hide_banner", "-loglevel", "warning", "-y"];
+  if (onProgress) {
+    ffmpegOptions = [...ffmpegOptions, "-progress", "-", "-nostats"];
+  }
+
   console.log("\n\n\n\n\nOPTIONS:\n\n\n\n");
   console.log([...ffmpegOptions, ...options]);
   try {
+    let stdoutHook = undefined;
+    if (onProgress) {
+      stdoutHook = (chunk: string) => {
+        const match = chunk.match(/out_time_us=(\d+)/);
+        if (match && match[1]) {
+          onProgress(parseInt(match[1], 10));
+        }
+      };
+    }
+
     const { status, stdout, stderr } = await utils.exec(
       preferences.get("ffmpeg_path"),
       [...ffmpegOptions, ...options],
+      null,
+      stdoutHook
     );
 
     console.log(stdout);

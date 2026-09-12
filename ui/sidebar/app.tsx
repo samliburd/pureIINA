@@ -5,6 +5,7 @@ import {
   IPCSyncStateMessage,
   IPCSetFilenameMessage,
   IPCCommandResultMessage,
+  IPCFFMPEGProgressMessage,
 } from '../../src/types';
 
 const App = () => {
@@ -12,6 +13,8 @@ const App = () => {
   const [endTime, setEndTime] = useState('-');
   const [filename, setFilename] = useState('');
   const [command, setCommand] = useState<string | null>(null);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [resultMessage, setResultMessage] = useState<{ text: string, error: boolean } | null>(null);
 
   useEffect(() => {
     if (window.iina) {
@@ -30,16 +33,25 @@ const App = () => {
           setCommand(data.command);
         }
       );
+      window.iina.onMessage(
+        'ffmpeg-progress',
+        (data: IPCFFMPEGProgressMessage) => {
+          setProgress(data.progress);
+          if (data.progress === 0) {
+            setResultMessage(null);
+          }
+        }
+      );
+      window.iina.onMessage(
+        'ffmpeg-result',
+        (data: { message: string, error: boolean }) => {
+          setResultMessage({ text: data.message, error: data.error });
+        }
+      );
 
       window.iina.postMessage('request-sync', {});
     }
   }, []);
-
-  const handleTogglePause = () => {
-    if (window.iina) {
-      window.iina.postMessage('toggle-pause', {});
-    }
-  };
 
   const handleSetStart = () => {
     if (window.iina) {
@@ -124,10 +136,19 @@ const App = () => {
         <button onClick={handleShowCommand} className="action-btn">
           Show Command
         </button>
-        <button onClick={handleRunFFmpeg} className="action-btn">
-          Run FFmpeg
+        <button onClick={handleRunFFmpeg} className="primary-btn" disabled={progress !== null}>
+          {progress !== null ? 'Running...' : 'Run FFmpeg'}
         </button>
       </div>
+
+      {progress !== null && (
+        <div className="progress-container">
+          <div className="progress-bar-bg">
+            <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+          </div>
+          <span className="progress-text">{progress.toFixed(1)}%</span>
+        </div>
+      )}
 
       {command && (
         <div className="command-display">
@@ -135,9 +156,11 @@ const App = () => {
         </div>
       )}
 
-      <button onClick={handleTogglePause} className="pause-btn">
-        Toggle Pause
-      </button>
+      {resultMessage && (
+        <div className={`result-message ${resultMessage.error ? 'error' : 'success'}`}>
+          {resultMessage.text}
+        </div>
+      )}
     </div>
   );
 };

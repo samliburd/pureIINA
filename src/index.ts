@@ -198,7 +198,7 @@ function initialize(): void {
     });
 
     sidebar.onMessage("run-ffmpeg", () => {
-        void videoProcessor.executeFFMPEG();
+        void videoProcessor.executeFFMPEG(true);
     });
 
     setupEventListeners();

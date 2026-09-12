@@ -9,6 +9,15 @@ export class TimeUtils {
   static getCurrentTimePosition(): string {
     return TimeUtils.secondsToISO(core.status.position || 0);
   }
+
+  static isoToSeconds(iso: string): number {
+    const parts = iso.split(":");
+    if (parts.length !== 3) return 0;
+    const h = parseFloat(parts[0]);
+    const m = parseFloat(parts[1]);
+    const s = parseFloat(parts[2]);
+    return h * 3600 + m * 60 + s;
+  }
 }
 
 export class CoordinateUtils {

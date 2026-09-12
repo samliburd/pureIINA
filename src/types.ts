@@ -55,3 +55,7 @@ export interface IPCSetFilenameMessage {
 export interface IPCCommandResultMessage {
     command: string;
 }
+
+export interface IPCFFMPEGProgressMessage {
+    progress: number | null;
+}

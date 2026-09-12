@@ -1,4 +1,4 @@
-const { core, preferences, utils } = iina;
+const { core, preferences, utils, sidebar } = iina;
 import {
   DEFAULT_START_TIME,
   FFMPEG_DEFAULTS,
@@ -358,7 +358,7 @@ export class VideoProcessor {
     }
   }
 
-  async executeFFMPEG(): Promise<void> {
+  async executeFFMPEG(skipConfirmation: boolean = false): Promise<void> {
     const commandResult = this.commandBuilder.buildCommand(true);
     if (
       !commandResult ||
@@ -370,22 +370,55 @@ export class VideoProcessor {
     const { args, outputFilename } = commandResult;
     const cleanedArgs = args.filter((entry) => entry !== "");
 
-    const userConfirmed = UserPrompts.confirmAction(
-      `Do you want to run this ffmpeg command:\n\nffmpeg ${cleanedArgs.join(" ")}`,
-    );
+    let userConfirmed = true;
+    if (!skipConfirmation) {
+      userConfirmed = UserPrompts.confirmAction(
+        `Do you want to run this ffmpeg command:\n\nffmpeg ${cleanedArgs.join(" ")}`,
+      );
+    }
 
     if (userConfirmed) {
       const inputFilename = this.state.getCurrentFilename();
       helpers.logger(`Processing ${inputFilename} -> ${outputFilename}`);
 
       try {
-        const result = await helpers.callFFMPEG(cleanedArgs);
+        const startSec = TimeUtils.isoToSeconds(this.state.timeArr[0]);
+        const endSec = TimeUtils.isoToSeconds(this.state.timeArr[1]);
+        const durationUs = (endSec - startSec) * 1_000_000;
+
+        sidebar.postMessage("ffmpeg-progress", { progress: 0 });
+
+        let lastOsdPct = -1;
+
+        const result = await helpers.callFFMPEG(cleanedArgs, (timeUs) => {
+          if (durationUs > 0) {
+            let pct = (timeUs / durationUs) * 100;
+            if (pct > 100) pct = 100;
+            if (pct < 0) pct = 0;
+            sidebar.postMessage("ffmpeg-progress", { progress: pct });
+
+            if (!skipConfirmation) {
+              const currentDecile = Math.floor(pct / 10) * 10;
+              if (currentDecile > lastOsdPct) {
+                core.osd(`Encoding Progress: ${currentDecile}%`);
+                lastOsdPct = currentDecile;
+              }
+            }
+          }
+        });
+
+        sidebar.postMessage("ffmpeg-progress", { progress: null });
+
         if (result.status === 0) {
           helpers.logger(`Video successfully processed: ${outputFilename}`);
+          sidebar.postMessage("ffmpeg-result", { message: `Output saved to:\n${outputFilename}`, error: false });
         } else {
           helpers.logger(`FFmpeg failed with status: ${result.status}`);
+          sidebar.postMessage("ffmpeg-result", { message: `Error: ${result.stderr || 'Unknown error'}`, error: true });
         }
-      } catch (error) {
+      } catch (error: any) {
+        sidebar.postMessage("ffmpeg-progress", { progress: null });
+        sidebar.postMessage("ffmpeg-result", { message: `Error: ${error.message || error}`, error: true });
         helpers.logger(`Error executing FFmpeg: ${error}`);
       }
     }
