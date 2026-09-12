@@ -103,6 +103,12 @@ function sendClickState(): void {
     };
 
     overlay.postMessage("click", payload);
+
+    if (appState.useCrop) {
+        overlay.show();
+    } else {
+        overlay.hide();
+    }
 }
 
 function exportAllKeybinds(): void {
@@ -203,11 +209,6 @@ function initialize(): void {
         videoProcessor.toggleCrop();
         sendClickState();
         broadcastCommand();
-        if (appState.useCrop) {
-            overlay.show();
-        } else {
-            overlay.hide();
-        }
     });
 
     sidebar.onMessage("set-crop-string", (data: IPCSetCropStringMessage) => {

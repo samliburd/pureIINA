@@ -21,7 +21,10 @@ const App = () => {
   } | null>(null);
   const [useCrop, setUseCrop] = useState(false);
   const [cropString, setCropString] = useState('');
-  const [videoDimensions, setVideoDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [videoDimensions, setVideoDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
 
   useEffect(() => {
     if (window.iina) {
@@ -61,7 +64,10 @@ const App = () => {
         'video-update',
         (data: { videoWidth: number; videoHeight: number }) => {
           if (data.videoWidth > 0 && data.videoHeight > 0) {
-            setVideoDimensions({ width: data.videoWidth, height: data.videoHeight });
+            setVideoDimensions({
+              width: data.videoWidth,
+              height: data.videoHeight,
+            });
           }
         }
       );
@@ -102,6 +108,40 @@ const App = () => {
 
   const handleFilenameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFilename(e.target.value);
+  };
+
+  const cropParts = cropString.split(':');
+  const cropW = parseInt(cropParts[0]) || 0;
+  const cropH = parseInt(cropParts[1]) || 0;
+  const cropX = parseInt(cropParts[2]) || 0;
+  const cropY = parseInt(cropParts[3]) || 0;
+
+  const isCropValid = cropParts.length === 4 && cropW > 0 && cropH > 0;
+  const maxCropX = videoDimensions
+    ? Math.max(0, videoDimensions.width - cropW)
+    : 0;
+  const maxCropY = videoDimensions
+    ? Math.max(0, videoDimensions.height - cropH)
+    : 0;
+
+  const handleSliderXChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newX = e.target.value;
+    const newCropString = `${cropW}:${cropH}:${newX}:${cropY}`;
+    setCropString(newCropString);
+    if (window.iina) {
+      const payload: IPCSetCropStringMessage = { cropString: newCropString };
+      window.iina.postMessage('set-crop-string', payload);
+    }
+  };
+
+  const handleSliderYChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newY = e.target.value;
+    const newCropString = `${cropW}:${cropH}:${cropX}:${newY}`;
+    setCropString(newCropString);
+    if (window.iina) {
+      const payload: IPCSetCropStringMessage = { cropString: newCropString };
+      window.iina.postMessage('set-crop-string', payload);
+    }
   };
 
   const handleFilenameBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -165,16 +205,23 @@ const App = () => {
       </div>
 
       <div className="button-group">
-        <button onClick={handleToggleCrop} className={useCrop ? 'primary-btn' : 'action-btn'}>
+        <button
+          onClick={handleToggleCrop}
+          className={useCrop ? 'primary-btn' : 'action-btn'}
+        >
           {useCrop ? 'Crop Mode: ON' : 'Crop Mode: OFF'}
         </button>
       </div>
 
-      <div className="input-group">
+      {useCrop && (
+        <div className="input-group">
         <label>
           Crop (W:H:X:Y)
           {videoDimensions && (
-            <span className="dim-text"> {videoDimensions.width}x{videoDimensions.height}</span>
+            <span className="dim-text">
+              {' '}
+              {videoDimensions.width}x{videoDimensions.height}
+            </span>
           )}
         </label>
         <input
@@ -185,15 +232,45 @@ const App = () => {
           className="text-input"
           placeholder="e.g. 1280:720:0:0"
         />
-      </div>
-
+        <div className="crop-sliders">
+          <div className="slider-row">
+            <span>X Offset</span>
+            <input
+              type="range"
+              min="0"
+              max={maxCropX}
+              value={cropX}
+              onChange={handleSliderXChange}
+              disabled={!isCropValid || !videoDimensions}
+              className="crop-slider"
+            />
+            <span className="slider-val">{cropX}</span>
+          </div>
+          <div className="slider-row">
+            <span>Y Offset</span>
+            <input
+              type="range"
+              min="0"
+              max={maxCropY}
+              value={cropY}
+              onChange={handleSliderYChange}
+              disabled={!isCropValid || !videoDimensions}
+              className="crop-slider"
+            />
+            <span className="slider-val">{cropY}</span>
+          </div>
+        </div>
+        </div>
+      )}
       <div className="button-group">
-        <button onClick={handleSetOutputDir} className="action-btn">
-          Set Output Dir
-        </button>
-        <button onClick={handleShowCommand} className="action-btn">
-          Show Command
-        </button>
+        <div className="button-row">
+          <button onClick={handleSetOutputDir} className="action-btn">
+            Set Output Dir
+          </button>
+          <button onClick={handleShowCommand} className="action-btn">
+            Show Command
+          </button>
+        </div>
         <button
           onClick={handleRunFFmpeg}
           className="primary-btn"
