@@ -5,6 +5,8 @@ interface IINAUpdateData {
   videoWidth: number;
   videoHeight: number;
   scale?: number;
+  showHud?: boolean;
+  videoTrack?: import("../../src/types").VideoTrackInfo | null;
 }
 
 interface IINAClickData {

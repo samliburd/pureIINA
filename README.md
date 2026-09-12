@@ -9,10 +9,11 @@ https://github.com/4ndrs/PureMPV
 
 ## Core Features
 
-- **Time Trimming:** Set precise start and end times for the video segment you wish to extract.
-- **Visual Cropping:** Click on the video to define a crop rectangle using a two-click system.
-- **React Overlay (HUD):** Displays a modern Heads-Up Display with real-time video statistics and coordinates.
-- **FFmpeg Integration:** Automatically build the correct FFmpeg command with the selected times and crop dimensions. You can copy this command to your clipboard or run it directly in the background within IINA.
+- **Interactive Sidebar:** A rich React-based sidebar provides intuitive controls for cropping, trimming, setting output directories, and tracking FFmpeg encoding progress.
+- **Time Trimming:** Set precise start and end times for the video segment you wish to extract directly from the sidebar or via shortcuts.
+- **Visual Cropping & Precise Sliders:** Click on the video to define a crop rectangle using a two-click system, or use the sidebar's X/Y sliders and text inputs for pixel-perfect adjustments.
+- **React Overlay (HUD):** Displays a modern Heads-Up Display in the bottom-right corner with real-time video statistics and coordinates.
+- **FFmpeg Integration:** Automatically build the correct FFmpeg command with the selected times and crop dimensions. You can view the live command in the sidebar, copy it to your clipboard, or run it directly in the background within IINA with live progress tracking.
 - **Automatic Dependency Management:** If FFmpeg is not installed on the system, pureIINA can automatically download and configure a local copy of FFmpeg for you.
 
 ## Installation & Build
@@ -20,7 +21,7 @@ https://github.com/4ndrs/PureMPV
 pureIINA is built with [Parcel](https://parceljs.org/), React, and TypeScript.
 
 1. Clone the repository into your IINA plugins directory (usually `~/Library/Application Support/com.colliderli.iina/plugins/`).
-2. Install dependencies:
+2. Install dependencies (requires Yarn PnP):
    ```bash
    yarn install
    ```
@@ -29,10 +30,11 @@ pureIINA is built with [Parcel](https://parceljs.org/), React, and TypeScript.
    yarn build
    ```
 4. Open IINA, go to **Settings > Plugins**, and ensure `pureIINA` is enabled.
+5. To access the interactive controls, toggle the sidebar using IINA's menu bar (`View` -> `Sidebar` -> `pureIINA`).
 
 ## Usage & Keyboard Shortcuts
 
-Once pureIINA is enabled, you can control it entirely via the menu bar (`Plugin` -> `pureIINA`) or using the following shortcuts:
+Once pureIINA is enabled, you can control it via the interactive sidebar, the menu bar (`Plugin` -> `pureIINA`), or using the following shortcuts:
 
 | Shortcut | Action | Description |
 |----------|--------|-------------|
@@ -54,6 +56,7 @@ The plugin utilizes a modular TypeScript architecture:
 - `src/menus.ts`: IINA menu bar bindings.
 - `src/utils.ts` & `src/helpers.ts`: Pure utility functions and system integration (FS/Network).
 - `ui/overlay/`: Contains the React Heads-Up Display application injected via IINA's Webview API.
+- `ui/sidebar/`: Contains the React interactive sidebar providing UI controls and live progress tracking.
 
 ## License
 ISC

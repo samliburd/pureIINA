@@ -15,6 +15,21 @@ export interface Rect {
     height: number;
 }
 
+export interface VideoTrackInfo {
+    trackTitle?: string;
+    codec?: string;
+    pixelFormat?: string;
+    colorSpace?: string;
+    primaries?: string;
+    gamma?: string;
+    colorLevels?: string;
+    bitDepth?: number;
+    fps?: number;
+    bitrate?: number;
+    hwdec?: string;
+    hdr?: string;
+}
+
 export interface IPCUpdateMessage {
     time: string;
     videoFrame: Rect;
@@ -22,6 +37,7 @@ export interface IPCUpdateMessage {
     videoHeight: number;
     scale: number;
     showHud: boolean;
+    videoTrack?: VideoTrackInfo | null;
 }
 
 export interface IPCClickMessage {
@@ -66,4 +82,9 @@ export interface IPCCommandResultMessage {
 
 export interface IPCFFMPEGProgressMessage {
     progress: number | null;
+}
+
+export interface IPCFFMPEGResultMessage {
+    message: string;
+    error: boolean;
 }

@@ -97,6 +97,74 @@ body {
   color: #ff4081; /* Matches your pink crop box */
 }
 
+/* --- Badges & Headers --- */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+
+  h4 {
+    margin: 0;
+  }
+}
+
+.badge-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.badge-hdr {
+  background: linear-gradient(135deg, #ff8a00, #e52e71);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(229, 46, 113, 0.3);
+}
+
+.badge-sdr {
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  opacity: 0.8;
+}
+
+.badge-hwdec {
+  background: rgba(40, 167, 69, 0.15);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.badge-tag {
+  background: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .badge-sdr {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .badge-hwdec {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+    border-color: rgba(46, 204, 113, 0.35);
+  }
+  .badge-tag {
+    background: rgba(10, 132, 255, 0.22);
+    color: #5ac8fa;
+  }
+}
+
 /* --- Crop Box --- */
 #cropBox {
   position: fixed;

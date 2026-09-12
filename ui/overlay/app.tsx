@@ -1,6 +1,6 @@
 import "../shared.scss";
 import React, { useState, useEffect } from "react";
-import { IPCUpdateMessage, IPCClickMessage } from "../../src/types";
+import { IPCUpdateMessage, IPCClickMessage, VideoTrackInfo } from "../../src/types";
 
 const App = () => {
     const [currentTime, setCurrentTime] = useState("00:00:00.000");
@@ -17,6 +17,7 @@ const App = () => {
 
     const [isWaiting, setIsWaiting] = useState(false);
     const [showHud, setShowHud] = useState(false);
+    const [videoTrack, setVideoTrack] = useState<VideoTrackInfo | null>(null);
 
     useEffect(() => {
         if (window.iina) {
@@ -30,6 +31,10 @@ const App = () => {
 
                 if (data.showHud !== undefined) {
                     setShowHud(data.showHud);
+                }
+
+                if (data.videoTrack !== undefined) {
+                    setVideoTrack(data.videoTrack);
                 }
 
                 if (data.videoWidth > 0 && data.videoHeight > 0) {
@@ -55,6 +60,14 @@ const App = () => {
             });
         }
     }, []);
+
+    const formatBitrate = (bps?: number): string | null => {
+        if (!bps || bps <= 0) return null;
+        if (bps >= 1_000_000) {
+            return `${(bps / 1_000_000).toFixed(1)} Mbps`;
+        }
+        return `${Math.round(bps / 1_000)} kbps`;
+    };
 
     const getBoxStyles = (): React.CSSProperties => {
         if (
@@ -126,7 +139,99 @@ const App = () => {
                     </div>
                 </div>
 
-                {/* 2. Window Frame Stats */}
+                {/* 2. Video Track & Colour Profile */}
+                {videoTrack && (
+                    <div className="hud-panel">
+                        <div className="panel-header">
+                            <h4>Track & Colour Profile</h4>
+                            <div className="badge-group">
+                                {videoTrack.hdr ? (
+                                    <span className="badge badge-hdr">{videoTrack.hdr}</span>
+                                ) : (
+                                    <span className="badge badge-sdr">SDR</span>
+                                )}
+                                {videoTrack.hwdec && (
+                                    <span className="badge badge-hwdec">HW: {videoTrack.hwdec}</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {videoTrack.trackTitle && (
+                            <div className="stat-item" style={{ marginBottom: "6px" }}>
+                                <span className="stat-label">Track:</span>
+                                <span
+                                    className="stat-value"
+                                    style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "380px" }}
+                                    title={videoTrack.trackTitle}
+                                >
+                                    {videoTrack.trackTitle}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="flex-row" style={{ marginBottom: "6px" }}>
+                            {videoTrack.codec && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Codec:</span>
+                                    <span className="stat-value">{videoTrack.codec}</span>
+                                </div>
+                            )}
+                            {videoTrack.fps && (
+                                <div className="stat-item">
+                                    <span className="stat-label">FPS:</span>
+                                    <span className="stat-value">{videoTrack.fps}</span>
+                                </div>
+                            )}
+                            {videoTrack.bitrate && formatBitrate(videoTrack.bitrate) && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Bitrate:</span>
+                                    <span className="stat-value">{formatBitrate(videoTrack.bitrate)}</span>
+                                </div>
+                            )}
+                            {videoTrack.bitDepth && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Depth:</span>
+                                    <span className="stat-value">{videoTrack.bitDepth}-bit</span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex-row">
+                            {videoTrack.pixelFormat && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Format:</span>
+                                    <span className="stat-value">{videoTrack.pixelFormat}</span>
+                                </div>
+                            )}
+                            {videoTrack.colorSpace && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Matrix:</span>
+                                    <span className="stat-value">{videoTrack.colorSpace}</span>
+                                </div>
+                            )}
+                            {videoTrack.primaries && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Primaries:</span>
+                                    <span className="stat-value">{videoTrack.primaries}</span>
+                                </div>
+                            )}
+                            {videoTrack.gamma && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Transfer:</span>
+                                    <span className="stat-value">{videoTrack.gamma}</span>
+                                </div>
+                            )}
+                            {videoTrack.colorLevels && (
+                                <div className="stat-item">
+                                    <span className="stat-label">Range:</span>
+                                    <span className="stat-value">{videoTrack.colorLevels}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* 3. Window Frame Stats */}
                 <div className="hud-panel flex-row">
                     <div className="stat-item">
                         <span className="stat-label">Frame:</span>

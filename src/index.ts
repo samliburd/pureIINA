@@ -1,9 +1,9 @@
-const { input, core, overlay, event, utils, file, console, sidebar } = iina;
+const { input, core, overlay, event, utils, file, console, sidebar, mpv } = iina;
 
 import { AppState, VideoProcessor } from "./core";
 import { setupMenus } from "./menus";
 import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
-import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage } from "./types";
+import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo } from "./types";
 
 // Initialize Core Logic
 const appState = new AppState();
@@ -57,6 +57,56 @@ function setupEventListeners(): void {
     // })
 }
 
+function getVideoTrackInfo(): VideoTrackInfo | null {
+    try {
+        if (!core.status.videoWidth || core.status.idle) {
+            return null;
+        }
+
+        const currentTrack = core.video.currentTrack;
+        const videoParams = mpv.getNative<Record<string, any>>("video-params") || {};
+
+        const codec = currentTrack?.codec || mpv.getString("video-codec") || mpv.getString("video-format") || undefined;
+        const pixelFormat = videoParams["pixelformat"] || mpv.getString("video-params/pixelformat") || undefined;
+        const colormatrix = videoParams["colormatrix"] || mpv.getString("video-params/colormatrix") || undefined;
+        const primaries = videoParams["primaries"] || mpv.getString("video-params/primaries") || undefined;
+        const gamma = videoParams["gamma"] || mpv.getString("video-params/gamma") || undefined;
+        const colorlevels = videoParams["colorlevels"] || mpv.getString("video-params/colorlevels") || undefined;
+        const bitDepth = videoParams["plane-depth"] || (videoParams["average-bpp"] ? Math.round(Number(videoParams["average-bpp"]) / 3) : undefined);
+
+        const fps = mpv.getNumber("container-fps") || currentTrack?.demuxFPS || mpv.getNumber("estimated-vf-fps") || undefined;
+        const bitrate = mpv.getNumber("video-bitrate") || undefined;
+        const hwdec = mpv.getString("hwdec-current") || undefined;
+
+        // Detect HDR
+        let hdr: string | undefined = undefined;
+        if (gamma === "smpte2084" || gamma === "pq") {
+            hdr = "HDR10 (PQ)";
+        } else if (gamma === "arib-std-b67" || gamma === "hlg") {
+            hdr = "HLG";
+        } else if (videoParams["sig-peak"] && Number(videoParams["sig-peak"]) > 1) {
+            hdr = "HDR";
+        }
+
+        return {
+            trackTitle: currentTrack?.formattedTitle || currentTrack?.title || undefined,
+            codec: codec ? codec.toUpperCase() : undefined,
+            pixelFormat,
+            colorSpace: colormatrix,
+            primaries,
+            gamma,
+            colorLevels: colorlevels,
+            bitDepth: bitDepth ? Number(bitDepth) : undefined,
+            fps: fps && fps > 0 ? Math.round(fps * 100) / 100 : undefined,
+            bitrate: bitrate && bitrate > 0 ? bitrate : undefined,
+            hwdec: hwdec && hwdec !== "no" ? hwdec : undefined,
+            hdr,
+        };
+    } catch {
+        return null;
+    }
+}
+
 function startIntervals(): void {
     setInterval(() => {
         const payload: IPCUpdateMessage = {
@@ -65,7 +115,8 @@ function startIntervals(): void {
             videoWidth: core.status.videoWidth || 0,
             videoHeight: core.status.videoHeight || 0,
             scale: appState.scale || 1,
-            showHud: appState.showHud
+            showHud: appState.showHud,
+            videoTrack: getVideoTrackInfo()
         };
         overlay.postMessage("update", payload);
         sidebar.postMessage("video-update", { 
@@ -227,6 +278,7 @@ function initialize(): void {
             videoHeight: core.status.videoHeight || 0,
             scale: appState.scale || 1,
             showHud: appState.showHud,
+            videoTrack: getVideoTrackInfo(),
         };
         overlay.postMessage("update", payload);
     });
