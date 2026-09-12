@@ -9,6 +9,9 @@
     "url": "https://iina.io"
   },
   "entry": "dist/index.js",
+  "sidebarTab": {
+    "name": "pureIINA"
+  },
   "permissions": [
     "show-osd",
     "show-alert",

@@ -36,3 +36,22 @@ export interface FFMPEGCommandResult {
     args: string[];
     outputFilename: string;
 }
+
+export interface IPCTimeUpdateMessage {
+    type: "start" | "end";
+    time: string;
+}
+
+export interface IPCSyncStateMessage {
+    startTime: string;
+    endTime: string;
+    filename: string;
+}
+
+export interface IPCSetFilenameMessage {
+    filename: string;
+}
+
+export interface IPCCommandResultMessage {
+    command: string;
+}

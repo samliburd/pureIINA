@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "serve-overlay": "parcel serve ui/overlay/index.html --dist-dir dist/ui/overlay",
-    "build": "rm -rf dist .parcel-cache && parcel build . --no-content-hash",
+    "serve-sidebar": "parcel serve ui/sidebar/index.html --dist-dir dist/ui/sidebar",
+    "build": "rm -rf dist .parcel-cache && parcel build --target overlay --no-content-hash && parcel build --target sidebar --no-content-hash && parcel build --target entry --no-content-hash",
     "lint": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -37,6 +38,12 @@
     "overlay": {
       "distDir": "./dist/ui/overlay",
       "source": "ui/overlay/index.html",
+      "publicUrl": "./",
+      "outputFormat": "global"
+    },
+    "sidebar": {
+      "distDir": "./dist/ui/sidebar",
+      "source": "ui/sidebar/index.html",
       "publicUrl": "./",
       "outputFormat": "global"
     },

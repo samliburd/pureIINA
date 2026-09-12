@@ -1,9 +1,9 @@
-const { input, core, overlay, event, utils, file, console } = iina;
+const { input, core, overlay, event, utils, file, console, sidebar } = iina;
 
 import { AppState, VideoProcessor } from "./core";
 import { setupMenus } from "./menus";
-import { TimeUtils } from "./utils";
-import { IPCUpdateMessage, IPCClickMessage } from "./types";
+import { TimeUtils, UserPrompts } from "./utils";
+import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage } from "./types";
 
 // Initialize Core Logic
 const appState = new AppState();
@@ -137,6 +137,69 @@ function exportAllKeybinds(): void {
 
 function initialize(): void {
     overlay.loadFile("dist/ui/overlay/index.html");
+
+    sidebar.loadFile("dist/ui/sidebar/index.html");
+    
+    const broadcastCommand = () => {
+        const fn = appState.getCurrentFilename();
+        const cmd = videoProcessor.commandBuilder._buildClipboardCommand(fn);
+        sidebar.postMessage("command-result", { command: cmd });
+    };
+    sidebar.onMessage("toggle-pause", () => {
+        if (core.status.paused) {
+            core.resume();
+        } else {
+            core.pause();
+        }
+    });
+
+    sidebar.onMessage("set-start-time", () => {
+        const t = videoProcessor.setTimePosition(0);
+        core.osd(`Start time: ${t}`);
+        const payload: IPCTimeUpdateMessage = { type: "start", time: t };
+        sidebar.postMessage("time-update", payload);
+        broadcastCommand();
+    });
+
+    sidebar.onMessage("set-end-time", () => {
+        const t = videoProcessor.setTimePosition(1);
+        core.osd(`End time: ${t}`);
+        const payload: IPCTimeUpdateMessage = { type: "end", time: t };
+        sidebar.postMessage("time-update", payload);
+        broadcastCommand();
+    });
+
+    sidebar.onMessage("request-sync", () => {
+        const payload: IPCSyncStateMessage = {
+            startTime: appState.timeArr[0],
+            endTime: appState.timeArr[1],
+            filename: appState.outputFilename,
+        };
+        sidebar.postMessage("sync-state", payload);
+    });
+
+    sidebar.onMessage("set-filename", (data: IPCSetFilenameMessage) => {
+        appState.outputFilename = data.filename;
+        broadcastCommand();
+    });
+
+    sidebar.onMessage("set-output-dir", () => {
+        void UserPrompts.promptOutputDir().then((newDir) => {
+            if (newDir) {
+                appState.outputDir = newDir;
+                core.osd(`Output directory: ${newDir}`);
+                broadcastCommand();
+            }
+        });
+    });
+
+    sidebar.onMessage("get-command", () => {
+        broadcastCommand();
+    });
+
+    sidebar.onMessage("run-ffmpeg", () => {
+        void videoProcessor.executeFFMPEG();
+    });
 
     setupEventListeners();
     setupMenus(appState, videoProcessor);
