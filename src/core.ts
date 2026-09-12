@@ -262,26 +262,34 @@ export class VideoProcessor {
       return;
     }
 
-    const parsedCrop = CoordinateUtils.parseCropString(userInput);
+    this.setCropFromString(userInput);
+  }
+
+  setCropFromString(cropStr: string): boolean {
+    if (!this.state.useCrop) {
+      this.state.useCrop = true;
+    }
+
+    const parsedCrop = CoordinateUtils.parseCropString(cropStr);
 
     if (!parsedCrop) {
       core.osd(
         "Invalid crop format. Please use width:height:x:y format (e.g., 1280:720:100:50)",
       );
-      return;
+      return false;
     }
 
-    if (!this.state.dimensions) return;
+    if (!this.state.dimensions) return false;
     const { videoWidth, videoHeight } = this.state.dimensions;
 
     if (parsedCrop.width <= 0 || parsedCrop.height <= 0) {
       core.osd("Crop width and height must be greater than 0");
-      return;
+      return false;
     }
 
     if (parsedCrop.x < 0 || parsedCrop.y < 0) {
       core.osd("Crop x and y coordinates must be 0 or greater");
-      return;
+      return false;
     }
 
     if (
@@ -291,7 +299,7 @@ export class VideoProcessor {
       core.osd(
         `Crop area exceeds video dimensions (${videoWidth}x${videoHeight})`,
       );
-      return;
+      return false;
     }
     const toEven = (val: number) => Math.round(val / 2) * 2;
     parsedCrop.width = toEven(parsedCrop.width);
@@ -301,7 +309,7 @@ export class VideoProcessor {
 
     this.state.normalizedCoordinates = parsedCrop;
 
-    if (!this.state.scale || !this.state.frame) return;
+    if (!this.state.scale || !this.state.frame) return false;
 
     this.state.rectangleCoordinates = CoordinateUtils.denormalizeCoordinates(
       parsedCrop,
@@ -320,6 +328,7 @@ export class VideoProcessor {
     core.osd(
       `Crop set to: ${parsedCrop.width}:${parsedCrop.height}:${parsedCrop.x}:${parsedCrop.y}`,
     );
+    return true;
   }
 
   async copyCommandToClipboard(): Promise<void> {

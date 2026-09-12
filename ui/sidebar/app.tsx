@@ -6,6 +6,7 @@ import {
   IPCSetFilenameMessage,
   IPCCommandResultMessage,
   IPCFFMPEGProgressMessage,
+  IPCSetCropStringMessage,
 } from '../../src/types';
 
 const App = () => {
@@ -18,6 +19,9 @@ const App = () => {
     text: string;
     error: boolean;
   } | null>(null);
+  const [useCrop, setUseCrop] = useState(false);
+  const [cropString, setCropString] = useState('');
+  const [videoDimensions, setVideoDimensions] = useState<{ width: number; height: number } | null>(null);
 
   useEffect(() => {
     if (window.iina) {
@@ -29,6 +33,8 @@ const App = () => {
         setStartTime(data.startTime);
         setEndTime(data.endTime);
         setFilename(data.filename);
+        setUseCrop(data.useCrop);
+        setCropString(data.cropString);
       });
       window.iina.onMessage(
         'command-result',
@@ -51,6 +57,14 @@ const App = () => {
           setResultMessage({ text: data.message, error: data.error });
         }
       );
+      window.iina.onMessage(
+        'video-update',
+        (data: { videoWidth: number; videoHeight: number }) => {
+          if (data.videoWidth > 0 && data.videoHeight > 0) {
+            setVideoDimensions({ width: data.videoWidth, height: data.videoHeight });
+          }
+        }
+      );
 
       window.iina.postMessage('request-sync', {});
     }
@@ -65,6 +79,24 @@ const App = () => {
   const handleSetEnd = () => {
     if (window.iina) {
       window.iina.postMessage('set-end-time', {});
+    }
+  };
+
+  const handleToggleCrop = () => {
+    if (window.iina) {
+      window.iina.postMessage('toggle-crop', {});
+      setUseCrop(!useCrop);
+    }
+  };
+
+  const handleCropChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setCropString(e.target.value);
+  };
+
+  const handleCropBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (window.iina) {
+      const payload: IPCSetCropStringMessage = { cropString: e.target.value };
+      window.iina.postMessage('set-crop-string', payload);
     }
   };
 
@@ -127,8 +159,31 @@ const App = () => {
           value={filename}
           onChange={handleFilenameChange}
           onBlur={handleFilenameBlur}
-          placeholder="output_filename"
           className="text-input"
+          placeholder="e.g. output.mp4"
+        />
+      </div>
+
+      <div className="button-group">
+        <button onClick={handleToggleCrop} className={useCrop ? 'primary-btn' : 'action-btn'}>
+          {useCrop ? 'Crop Mode: ON' : 'Crop Mode: OFF'}
+        </button>
+      </div>
+
+      <div className="input-group">
+        <label>
+          Crop (W:H:X:Y)
+          {videoDimensions && (
+            <span className="dim-text"> {videoDimensions.width}x{videoDimensions.height}</span>
+          )}
+        </label>
+        <input
+          type="text"
+          value={cropString}
+          onChange={handleCropChange}
+          onBlur={handleCropBlur}
+          className="text-input"
+          placeholder="e.g. 1280:720:0:0"
         />
       </div>
 

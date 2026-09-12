@@ -107,6 +107,15 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display: flex;
+    justify-content: space-between;
+
+    .dim-text {
+      color: #888;
+      font-weight: normal;
+      text-transform: none;
+      font-family: monospace;
+    }
   }
 
   .text-input {

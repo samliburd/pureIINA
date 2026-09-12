@@ -46,10 +46,16 @@ export interface IPCSyncStateMessage {
     startTime: string;
     endTime: string;
     filename: string;
+    useCrop: boolean;
+    cropString: string;
 }
 
 export interface IPCSetFilenameMessage {
     filename: string;
+}
+
+export interface IPCSetCropStringMessage {
+    cropString: string;
 }
 
 export interface IPCCommandResultMessage {

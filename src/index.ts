@@ -2,8 +2,8 @@ const { input, core, overlay, event, utils, file, console, sidebar } = iina;
 
 import { AppState, VideoProcessor } from "./core";
 import { setupMenus } from "./menus";
-import { TimeUtils, UserPrompts } from "./utils";
-import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage } from "./types";
+import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
+import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage } from "./types";
 
 // Initialize Core Logic
 const appState = new AppState();
@@ -64,9 +64,13 @@ function startIntervals(): void {
             videoFrame: core.window.frame,
             videoWidth: core.status.videoWidth || 0,
             videoHeight: core.status.videoHeight || 0,
-            scale: appState.scale || 1, // <-- Added scale here
+            scale: appState.scale || 1,
         };
         overlay.postMessage("update", payload);
+        sidebar.postMessage("video-update", { 
+            videoWidth: payload.videoWidth, 
+            videoHeight: payload.videoHeight 
+        });
     }, 500);
 
     setInterval(() => {
@@ -174,6 +178,8 @@ function initialize(): void {
             startTime: appState.timeArr[0],
             endTime: appState.timeArr[1],
             filename: appState.outputFilename,
+            useCrop: appState.useCrop,
+            cropString: CoordinateUtils.cropToCoordsString(appState.normalizedCoordinates) || ""
         };
         sidebar.postMessage("sync-state", payload);
     });
@@ -191,6 +197,24 @@ function initialize(): void {
                 broadcastCommand();
             }
         });
+    });
+
+    sidebar.onMessage("toggle-crop", () => {
+        videoProcessor.toggleCrop();
+        sendClickState();
+        broadcastCommand();
+        if (appState.useCrop) {
+            overlay.show();
+        } else {
+            overlay.hide();
+        }
+    });
+
+    sidebar.onMessage("set-crop-string", (data: IPCSetCropStringMessage) => {
+        if (videoProcessor.setCropFromString(data.cropString)) {
+            sendClickState();
+            broadcastCommand();
+        }
     });
 
     sidebar.onMessage("get-command", () => {
