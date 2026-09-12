@@ -22,6 +22,7 @@ export class AppState {
   outputDir: string | null;
   outputFilename: string = "";
   useCrop: boolean = false;
+  showHud: boolean = false;
   startTime: string;
   endTime: string;
 

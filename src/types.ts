@@ -21,6 +21,7 @@ export interface IPCUpdateMessage {
     videoWidth: number;
     videoHeight: number;
     scale: number;
+    showHud: boolean;
 }
 
 export interface IPCClickMessage {
@@ -48,6 +49,7 @@ export interface IPCSyncStateMessage {
     filename: string;
     useCrop: boolean;
     cropString: string;
+    showHud: boolean;
 }
 
 export interface IPCSetFilenameMessage {

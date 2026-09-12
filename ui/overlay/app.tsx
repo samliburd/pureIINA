@@ -16,6 +16,7 @@ const App = () => {
     const [cropBox, setCropBox] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
 
     const [isWaiting, setIsWaiting] = useState(false);
+    const [showHud, setShowHud] = useState(false);
 
     useEffect(() => {
         if (window.iina) {
@@ -25,6 +26,10 @@ const App = () => {
 
                 if (data.scale !== undefined) {
                     setVideoScale(data.scale);
+                }
+
+                if (data.showHud !== undefined) {
+                    setShowHud(data.showHud);
                 }
 
                 if (data.videoWidth > 0 && data.videoHeight > 0) {
@@ -103,6 +108,7 @@ const App = () => {
             {/* The visual crop rectangle */}
             <div id="cropBox" style={getBoxStyles()}></div>
 
+            {showHud && (
             <div className="hud-container">
                 {/* 1. Global Video Stats */}
                 <div className="hud-panel flex-row">
@@ -189,6 +195,7 @@ const App = () => {
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 };

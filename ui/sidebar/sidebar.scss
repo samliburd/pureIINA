@@ -45,7 +45,7 @@ body {
 }
 
 .action-btn {
-  padding: 6px 12px;
+  padding: 6px 8px;
   border-radius: 6px;
   background-color: rgba(255, 255, 255, 0.1);
   color: #eee;
@@ -80,7 +80,7 @@ body {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
-  
+
   &:active:not(:disabled) {
     background-color: #c51162;
     transform: translateY(0);
@@ -126,7 +126,9 @@ body {
     color: white;
     font-size: 14px;
     outline: none;
-    transition: border-color 0.2s ease, background-color 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease;
 
     &:focus {
       border-color: #ff4081;

@@ -20,6 +20,7 @@ const App = () => {
     error: boolean;
   } | null>(null);
   const [useCrop, setUseCrop] = useState(false);
+  const [showHud, setShowHud] = useState(false);
   const [cropString, setCropString] = useState('');
   const [videoDimensions, setVideoDimensions] = useState<{
     width: number;
@@ -38,6 +39,7 @@ const App = () => {
         setFilename(data.filename);
         setUseCrop(data.useCrop);
         setCropString(data.cropString);
+        setShowHud(data.showHud);
       });
       window.iina.onMessage(
         'command-result',
@@ -92,6 +94,13 @@ const App = () => {
     if (window.iina) {
       window.iina.postMessage('toggle-crop', {});
       setUseCrop(!useCrop);
+    }
+  };
+
+  const handleToggleHud = () => {
+    if (window.iina) {
+      window.iina.postMessage('toggle-hud', {});
+      setShowHud(!showHud);
     }
   };
 
@@ -269,6 +278,9 @@ const App = () => {
           </button>
           <button onClick={handleShowCommand} className="action-btn">
             Show Command
+          </button>
+          <button onClick={handleToggleHud} className={showHud ? 'primary-btn' : 'action-btn'}>
+            Toggle HUD
           </button>
         </div>
         <button

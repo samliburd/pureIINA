@@ -25,10 +25,14 @@ body {
 
 /* --- HUD Panel Styling --- */
 .hud-container {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   max-width: 480px; /* Restrict the width to keep it compact */
+  z-index: 1000;
 }
 
 .hud-panel {

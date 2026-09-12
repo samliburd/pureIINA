@@ -65,6 +65,7 @@ function startIntervals(): void {
             videoWidth: core.status.videoWidth || 0,
             videoHeight: core.status.videoHeight || 0,
             scale: appState.scale || 1,
+            showHud: appState.showHud
         };
         overlay.postMessage("update", payload);
         sidebar.postMessage("video-update", { 
@@ -104,7 +105,7 @@ function sendClickState(): void {
 
     overlay.postMessage("click", payload);
 
-    if (appState.useCrop) {
+    if (appState.useCrop || appState.showHud) {
         overlay.show();
     } else {
         overlay.hide();
@@ -185,7 +186,8 @@ function initialize(): void {
             endTime: appState.timeArr[1],
             filename: appState.outputFilename,
             useCrop: appState.useCrop,
-            cropString: CoordinateUtils.cropToCoordsString(appState.normalizedCoordinates) || ""
+            cropString: CoordinateUtils.cropToCoordsString(appState.normalizedCoordinates) || "",
+            showHud: appState.showHud
         };
         sidebar.postMessage("sync-state", payload);
     });
@@ -209,6 +211,24 @@ function initialize(): void {
         videoProcessor.toggleCrop();
         sendClickState();
         broadcastCommand();
+    });
+
+    sidebar.onMessage("toggle-hud", () => {
+        appState.showHud = !appState.showHud;
+        if (appState.showHud || appState.useCrop) {
+            overlay.show();
+        } else {
+            overlay.hide();
+        }
+        const payload: IPCUpdateMessage = {
+            time: TimeUtils.secondsToISO(core.status.position || 0),
+            videoFrame: core.window.frame,
+            videoWidth: core.status.videoWidth || 0,
+            videoHeight: core.status.videoHeight || 0,
+            scale: appState.scale || 1,
+            showHud: appState.showHud,
+        };
+        overlay.postMessage("update", payload);
     });
 
     sidebar.onMessage("set-crop-string", (data: IPCSetCropStringMessage) => {
