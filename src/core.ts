@@ -102,12 +102,7 @@ export class FFMPEGCommandBuilder {
 
   _buildDirectCommand(filename: string): FFMPEGCommandResult | null {
     if (!this.state.outputFilename) {
-      const promptedFilename = UserPrompts.promptOutputFilename(filename);
-      if (!promptedFilename) {
-        core.osd("Output filename not provided. Operation cancelled.");
-        return null;
-      }
-      this.state.outputFilename = promptedFilename;
+      this.state.outputFilename = `${filename}.output.${FFMPEG_DEFAULTS.container}`;
     }
 
     // --- UPDATED LOGIC ---
@@ -258,24 +253,7 @@ export class VideoProcessor {
     core.osd(`Crop ${this.state.useCrop ? "enabled" : "disabled"}`);
   }
 
-  editCrop(): void {
-    if (!this.state.useCrop) {
-      this.state.useCrop = true;
-    }
 
-    const currentCrop = CoordinateUtils.cropToCoordsString(
-      this.state.normalizedCoordinates,
-    );
-
-    const userInput = UserPrompts.promptCropEdit(currentCrop);
-
-    if (!userInput) {
-      core.osd("Crop edit cancelled");
-      return;
-    }
-
-    this.setCropFromString(userInput);
-  }
 
   setCropFromString(cropStr: string): boolean {
     if (!this.state.useCrop) {
@@ -327,42 +305,8 @@ export class VideoProcessor {
     return true;
   }
 
-  async copyCommandToClipboard(): Promise<void> {
-    if (
-      this.state.useCrop && !this.state.normalizedCoordinates
-    ) {
-      core.osd("Please select a crop area before continuing.");
-      return;
-    }
 
-    const command = this.commandBuilder.buildCommand(false);
-    if (!command) return;
-
-    const userConfirmed = UserPrompts.confirmAction(
-      `Do you want to copy the following command to your clipboard?\n\n${command}`,
-    );
-
-    if (userConfirmed) {
-      try {
-        const { status, stderr } = await utils.exec("/bin/bash", [
-          "-c",
-          `echo "${command}" | pbcopy`,
-        ]);
-
-        if (status === 0) {
-          core.osd("Command copied to clipboard");
-        } else {
-          core.osd(`Failed to copy to clipboard: ${stderr}`);
-        }
-      } catch (error) {
-        core.osd(`Error copying to clipboard: ${error}`);
-      }
-    } else {
-      core.osd("User cancelled");
-    }
-  }
-
-  async executeFFMPEG(ffmpegPath: string, skipConfirmation: boolean = false): Promise<void> {
+  async executeFFMPEG(ffmpegPath: string): Promise<void> {
     const commandResult = this.commandBuilder.buildCommand(true);
     if (
       !commandResult ||
@@ -374,16 +318,8 @@ export class VideoProcessor {
     const { args, outputFilename } = commandResult;
     const cleanedArgs = args.filter((entry) => entry !== "");
 
-    let userConfirmed = true;
-    if (!skipConfirmation) {
-      userConfirmed = UserPrompts.confirmAction(
-        `Do you want to run this ffmpeg command:\n\nffmpeg ${cleanedArgs.join(" ")}`,
-      );
-    }
-
-    if (userConfirmed) {
-      const inputFilename = this.state.getCurrentFilename();
-      helpers.logger(`Processing ${inputFilename} -> ${outputFilename}`);
+    const inputFilename = this.state.getCurrentFilename();
+    helpers.logger(`Processing ${inputFilename} -> ${outputFilename}`);
 
       try {
         const startSec = TimeUtils.isoToSeconds(this.state.timeArr[0]);
@@ -432,5 +368,4 @@ export class VideoProcessor {
         helpers.logger(`Error executing FFmpeg: ${error}`);
       }
     }
-  }
 }

@@ -209,7 +209,7 @@ event.on("iina.window-loaded", () => {
             core.osd("FFmpeg not found! Please set the path first.");
             return;
         }
-        void videoProcessor.executeFFMPEG(currentFFMPEGPath, true);
+        void videoProcessor.executeFFMPEG(currentFFMPEGPath);
     });
 
     sidebar.onMessage("test-find-ffmpeg", async () => {

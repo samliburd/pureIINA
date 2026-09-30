@@ -53,11 +53,6 @@ export class CoordinateUtils {
 }
 
 export class UserPrompts {
-  static promptOutputFilename(currentFilename: string): string | null {
-    const fn = utils.prompt(`Please enter the file name\n\n${currentFilename}`);
-    return fn ? `${fn}.${FFMPEG_DEFAULTS.container}` : null;
-  }
-
   static async promptOutputDir(): Promise<string | null> {
     try {
       const tempOutput = await utils.chooseFile(
@@ -76,16 +71,5 @@ export class UserPrompts {
     }
   }
 
-  static confirmAction(message: string): boolean {
-    return utils.ask(message);
-  }
 
-  static promptCropEdit(currentCrop: string): string | null {
-    const helpText = `Edit Crop Area\n\nCurrent crop: crop=${currentCrop}\n\nEnter crop values in format: width:height:x:y\nExample: 1280:720:100:50\n\nCurrent crop: ${currentCrop}`;
-    return utils.prompt(helpText) || null;
-  }
-
-  static showCommand(message: string): boolean {
-    return utils.ask(message);
-  }
 }
