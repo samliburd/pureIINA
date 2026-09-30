@@ -107,6 +107,7 @@ function sendCropState(): void {
 event.on("iina.window-loaded", () => {
     sidebar.loadFile("dist/ui/sidebar/index.html");
     overlay.loadFile("dist/ui/overlay/index.html");
+    overlay.simpleMode();
     
     findFFMPEGPath().then((path) => {
         if (path) {
