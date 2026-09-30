@@ -21,31 +21,7 @@ export class TimeUtils {
 }
 
 export class CoordinateUtils {
-  static getRectangleCoordinates(firstClick: Point, secondClick: Point): Rect {
-    const x1 = firstClick.x;
-    const y1 = firstClick.y;
-    const x2 = secondClick.x;
-    const y2 = secondClick.y;
 
-    return {
-      x: Math.round(Math.min(x1, x2)),
-      y: Math.round(Math.min(y1, y2)),
-      width: Math.round(Math.abs(x2 - x1)),
-      height: Math.round(Math.abs(y2 - y1)),
-    };
-  }
-
-  static getNormalizedCoordinates(coordinates: Rect, scale: number): Rect {
-    // Helper function to force rounding to the nearest even integer
-    const toEven = (val: number) => Math.round(val / 2) * 2;
-
-    return {
-      x: toEven(coordinates.x * scale),
-      y: toEven(coordinates.y * scale),
-      width: toEven(coordinates.width * scale),
-      height: toEven(coordinates.height * scale),
-    };
-  }
 
   static parseCropString(cropString: string): Rect | null {
     const parts = cropString.split(":");
@@ -71,28 +47,7 @@ export class CoordinateUtils {
     return `${normalizedCoordinates.width}:${normalizedCoordinates.height}:${normalizedCoordinates.x}:${normalizedCoordinates.y}`;
   }
 
-  static denormalizeCoordinates(normalizedCoords: Rect, scale: number): Rect {
-    return {
-      x: Math.round(normalizedCoords.x / scale),
-      y: Math.round(normalizedCoords.y / scale),
-      width: Math.round(normalizedCoords.width / scale),
-      height: Math.round(normalizedCoords.height / scale),
-    };
-  }
 
-  static coordsToClickPositions(coordinates: Rect, frameHeight: number): { firstClick: Point, secondClick: Point } {
-    const firstClick = {
-      x: coordinates.x,
-      y: frameHeight - coordinates.y,
-    };
-
-    const secondClick = {
-      x: coordinates.x + coordinates.width,
-      y: frameHeight - (coordinates.y + coordinates.height),
-    };
-
-    return { firstClick, secondClick };
-  }
 
   // (getRectangleCoordinates, getNormalizedCoordinates, etc.)
 }

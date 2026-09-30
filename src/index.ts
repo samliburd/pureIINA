@@ -12,12 +12,7 @@ const videoProcessor = new VideoProcessor(appState);
 
 let currentFFMPEGPath: string | null = null;
 
-function setupEventListeners(): void {
-    input.onKeyDown("alt+k", () => {
-        videoProcessor.copyCommandToClipboard();
-        return true;
-    });
-}
+// Event listeners removed as requested
 
 function getVideoTrackInfo(): VideoTrackInfo | null {
     try {
@@ -114,6 +109,14 @@ event.on("iina.window-loaded", () => {
             currentFFMPEGPath = path;
             sidebar.postMessage("ffmpeg-path-update", { path: currentFFMPEGPath });
         }
+    });
+
+    event.on("iina.file-loaded", () => {
+        const duration = appState.getFormattedDuration();
+        appState.endTime = duration;
+        appState.timeArr[1] = duration;
+        const payload: IPCTimeUpdateMessage = { type: "end", time: duration };
+        sidebar.postMessage("time-update", payload);
     });
 
     const broadcastCommand = () => {
@@ -260,6 +263,5 @@ event.on("iina.window-loaded", () => {
         sidebar.postMessage("ffmpeg-download-progress", { status: "Failed to download or install FFmpeg." });
     });
 
-    setupEventListeners();
     startIntervals();
 });

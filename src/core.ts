@@ -14,9 +14,6 @@ export class AppState {
   scale: number | null = null;
   rectangleCoordinates: Rect | null = null;
   normalizedCoordinates: Rect | null = null;
-  firstClickPos: Point = { x: 0, y: 0 };
-  secondClickPos: Point = { x: 0, y: 0 };
-  isWaitingForSecondClick: boolean = false;
   isHidden: boolean = true;
   timeArr: string[];
   outputDir: string | null;
@@ -33,9 +30,6 @@ export class AppState {
     this.scale = null;
     this.rectangleCoordinates = null;
     this.normalizedCoordinates = null;
-    this.firstClickPos = { x: 0, y: 0 };
-    this.secondClickPos = { x: 0, y: 0 };
-    this.isWaitingForSecondClick = false;
     this.isHidden = true;
     this.timeArr = [DEFAULT_START_TIME, this.getFormattedDuration()];
 
@@ -65,9 +59,7 @@ export class AppState {
   }
 
   reset(): void {
-    this.firstClickPos = { x: 0, y: 0 };
-    this.secondClickPos = { x: 0, y: 0 };
-    this.isWaitingForSecondClick = false;
+    // Legacy reset properties removed
   }
 }
 
@@ -242,17 +234,7 @@ export class VideoProcessor {
     this.state.scale =
       this.state.dimensions.videoWidth / this.state.frame.width;
 
-    if (this.state.firstClickPos.x !== 0 && this.state.secondClickPos.x !== 0) {
-      this.state.rectangleCoordinates = CoordinateUtils.getRectangleCoordinates(
-        this.state.firstClickPos,
-        this.state.secondClickPos,
-      );
-      this.state.normalizedCoordinates =
-        CoordinateUtils.getNormalizedCoordinates(
-          this.state.rectangleCoordinates,
-          this.state.scale,
-        );
-    }
+
 
     try {
       const videoParams = mpv.getNative<Record<string, any>>("video-params") || {};
@@ -262,22 +244,6 @@ export class VideoProcessor {
       this.state.isHDR = gamma === "smpte2084" || gamma === "pq" || gamma === "arib-std-b67" || gamma === "hlg" || (sigPeak && Number(sigPeak) > 1) ? true : false;
     } catch {
       this.state.isHDR = false;
-    }
-  }
-
-  handleMouseClick(x: number, y: number): void {
-    if (!this.state.useCrop) return;
-
-    core.osd(x.toString());
-
-    const adjustedY = Math.round(core.window.frame.height - y);
-
-    if (!this.state.isWaitingForSecondClick) {
-      this.state.firstClickPos = { x: Math.round(x), y: adjustedY };
-      this.state.isWaitingForSecondClick = true;
-    } else {
-      this.state.secondClickPos = { x: Math.round(x), y: adjustedY };
-      this.state.isWaitingForSecondClick = false;
     }
   }
 
@@ -355,22 +321,6 @@ export class VideoProcessor {
 
     this.state.normalizedCoordinates = parsedCrop;
 
-    if (!this.state.scale || !this.state.frame) return false;
-
-    this.state.rectangleCoordinates = CoordinateUtils.denormalizeCoordinates(
-      parsedCrop,
-      this.state.scale,
-    );
-
-    const { firstClick, secondClick } = CoordinateUtils.coordsToClickPositions(
-      this.state.rectangleCoordinates,
-      this.state.frame.height,
-    );
-
-    this.state.firstClickPos = firstClick;
-    this.state.secondClickPos = secondClick;
-    this.state.isWaitingForSecondClick = false;
-
     core.osd(
       `Crop set to: ${parsedCrop.width}:${parsedCrop.height}:${parsedCrop.x}:${parsedCrop.y}`,
     );
@@ -379,8 +329,7 @@ export class VideoProcessor {
 
   async copyCommandToClipboard(): Promise<void> {
     if (
-      this.state.useCrop &&
-      (this.state.secondClickPos.x === 0 || this.state.secondClickPos.y === 0)
+      this.state.useCrop && !this.state.normalizedCoordinates
     ) {
       core.osd("Please select a crop area before continuing.");
       return;

@@ -17,7 +17,7 @@
     "file-system"
   ],
   "sidebarTab": {
-    "name": "Tab"
+    "name": "iinatools"
   },
   "allowedDomains": ["*"],
   "preferenceDefaults": {}
