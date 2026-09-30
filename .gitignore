@@ -128,3 +128,4 @@ package-lock.json
 # Ignored sub-projects and dependencies
 pureiina/
 iina-plugin-definition/
+iina-crash.txt
