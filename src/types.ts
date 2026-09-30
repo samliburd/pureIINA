@@ -31,7 +31,6 @@ export interface VideoTrackInfo {
 }
 
 export interface IPCUpdateMessage {
-    time: string;
     videoFrame: Rect;
     videoWidth: number;
     videoHeight: number;

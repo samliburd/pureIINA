@@ -64,24 +64,22 @@ function getVideoTrackInfo(): VideoTrackInfo | null {
     }
 }
 
-function startIntervals(): void {
-    setInterval(() => {
-        const payload: IPCUpdateMessage = {
-            time: TimeUtils.secondsToISO(core.status.position || 0),
-            videoFrame: core.window.frame,
-            videoWidth: core.status.videoWidth || 0,
-            videoHeight: core.status.videoHeight || 0,
-            scale: appState.scale || 1,
-            showHud: appState.showHud,
-            videoTrack: getVideoTrackInfo()
-        };
-        sidebar.postMessage("video-update", payload);
-        overlay.postMessage("video-update", payload);
-    }, 500);
+function broadcastVideoState(): void {
+    videoProcessor.updateVideoVariables();
 
-    setInterval(() => {
-        videoProcessor.updateVideoVariables();
-    }, 500);
+    const payload: IPCUpdateMessage = {
+        videoFrame: core.window.frame,
+        videoWidth: core.status.videoWidth || 0,
+        videoHeight: core.status.videoHeight || 0,
+        scale: appState.scale || 1,
+        showHud: appState.showHud,
+        videoTrack: getVideoTrackInfo()
+    };
+    
+    sidebar.postMessage("video-update", payload);
+    overlay.postMessage("video-update", payload);
+    
+    sendCropState();
 }
 
 function sendCropState(): void {
@@ -117,6 +115,7 @@ event.on("iina.window-loaded", () => {
         appState.timeArr[1] = duration;
         const payload: IPCTimeUpdateMessage = { type: "end", time: duration };
         sidebar.postMessage("time-update", payload);
+        broadcastVideoState();
     });
 
     const broadcastCommand = () => {
@@ -190,7 +189,7 @@ event.on("iina.window-loaded", () => {
 
     sidebar.onMessage("toggle-crop", () => {
         videoProcessor.toggleCrop();
-        sendCropState();
+        broadcastVideoState();
         broadcastCommand();
     });
 
@@ -263,5 +262,7 @@ event.on("iina.window-loaded", () => {
         sidebar.postMessage("ffmpeg-download-progress", { status: "Failed to download or install FFmpeg." });
     });
 
-    startIntervals();
+    event.on("iina.window-resized", broadcastVideoState);
+    event.on("iina.window-moved", broadcastVideoState);
+    event.on("iina.window-size-adjusted", broadcastVideoState);
 });
