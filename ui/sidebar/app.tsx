@@ -24,6 +24,8 @@ const App = () => {
   const [showHud, setShowHud] = useState(false);
   const [cropString, setCropString] = useState('');
   const [ffmpegPath, setFFMPEGPath] = useState('');
+  const [isFFMPEGPathFocused, setIsFFMPEGPathFocused] = useState(false);
+  const [foundFFMPEGPaths, setFoundFFMPEGPaths] = useState<string[] | null>(null);
   const [videoDimensions, setVideoDimensions] = useState<{
     width: number;
     height: number;
@@ -87,6 +89,10 @@ const App = () => {
           }
         }
       );
+
+      window.iina.onMessage('ffmpeg-paths-found', (data: { paths: string[] }) => {
+        setFoundFFMPEGPaths(data.paths);
+      });
 
       window.iina.postMessage('request-sync', {});
     }
@@ -236,10 +242,39 @@ const App = () => {
           type="text"
           value={ffmpegPath}
           onChange={handleFFMPEGPathChange}
-          onBlur={handleFFMPEGPathBlur}
+          onFocus={() => setIsFFMPEGPathFocused(true)}
+          onBlur={(e) => {
+            setTimeout(() => setIsFFMPEGPathFocused(false), 200);
+            handleFFMPEGPathBlur(e);
+          }}
           className={`text-input ${ffmpegPath ? 'found' : ''}`}
           placeholder="/usr/local/bin/ffmpeg"
         />
+        {isFFMPEGPathFocused && (
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.preventDefault();
+              if (window.iina) {
+                window.iina.postMessage('test-find-ffmpeg', {});
+              }
+            }}
+            className="action-btn"
+            style={{ marginTop: '8px' }}
+          >
+            Find ffmpeg
+          </button>
+        )}
+        {foundFFMPEGPaths && (
+          <div style={{ marginTop: '8px' }}>
+            <textarea
+              readOnly
+              className="text-input"
+              value={foundFFMPEGPaths.length > 0 ? foundFFMPEGPaths.join('\n') : 'No ffmpeg paths found.'}
+              style={{ minHeight: '60px', resize: 'vertical', width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="button-group">

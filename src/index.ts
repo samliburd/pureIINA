@@ -257,6 +257,29 @@ event.on("iina.window-loaded", () => {
         void videoProcessor.executeFFMPEG(currentFFMPEGPath, true);
     });
 
+    sidebar.onMessage("test-find-ffmpeg", async () => {
+        try {
+            const { status, stdout } = await utils.exec("/bin/bash", [
+                "-ilc",
+                "export PATH=$PATH:$HOME/.local/bin:$HOME/miniconda3/envs/default/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin && which -a ffmpeg"
+            ]);
+            
+            if (status === 0 && stdout) {
+                // Split by newline and filter out any empty strings
+                const paths = stdout.split("\n").filter(p => p.trim().length > 0);
+                
+                // Remove duplicates by using Set
+                const uniquePaths = Array.from(new Set(paths));
+                
+                sidebar.postMessage("ffmpeg-paths-found", { paths: uniquePaths });
+            } else {
+                sidebar.postMessage("ffmpeg-paths-found", { paths: [] });
+            }
+        } catch (error) {
+            core.osd(`Error finding FFmpeg: ${error}`);
+        }
+    });
+
     setupEventListeners();
     startIntervals();
 });

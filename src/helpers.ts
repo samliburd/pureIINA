@@ -61,15 +61,19 @@ export async function findFFMPEGPath(): Promise<string | null> {
   // Search system PATHs dynamically
   try {
     const { status, stdout } = await utils.exec("/bin/bash", [
-      "-c",
-      "export PATH=$PATH:$HOME/.local/bin:$HOME/miniconda3/envs/default/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin && command -v ffmpeg",
+      "-ilc",
+      "export PATH=$PATH:$HOME/.local/bin:$HOME/miniconda3/envs/default/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin && which -a ffmpeg",
     ]);
 
     if (status === 0 && stdout) {
-      FFMPEG_BINARY_PATH = stdout.trim();
-      preferences.set("ffmpeg_path", FFMPEG_BINARY_PATH);
-      logger(`ffmpeg found at ${FFMPEG_BINARY_PATH}`);
-      return FFMPEG_BINARY_PATH;
+      const paths = stdout.split("\n").filter(p => p.trim().length > 0);
+      const uniquePaths = Array.from(new Set(paths));
+      if (uniquePaths.length > 0) {
+        FFMPEG_BINARY_PATH = uniquePaths[0];
+        preferences.set("ffmpeg_path", FFMPEG_BINARY_PATH);
+        logger(`ffmpeg auto-detected at ${FFMPEG_BINARY_PATH}`);
+        return FFMPEG_BINARY_PATH;
+      }
     }
   } catch (error: any) {
     logger(`Could not find ffmpeg: ${error.message}`);
