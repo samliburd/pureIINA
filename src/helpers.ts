@@ -60,9 +60,10 @@ export async function findFFMPEGPath(): Promise<string | null> {
 
   // Search system PATHs dynamically
   try {
+    const dataBinPath = utils.resolvePath("@data/bin");
     const { status, stdout } = await utils.exec("/bin/bash", [
       "-ilc",
-      "export PATH=$PATH:$HOME/.local/bin:$HOME/miniconda3/envs/default/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin && which -a ffmpeg",
+      `export PATH=$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin:"${dataBinPath}" && which -a ffmpeg`,
     ]);
 
     if (status === 0 && stdout) {

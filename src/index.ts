@@ -1,7 +1,7 @@
 import { AppState, VideoProcessor } from "./core";
 import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
 import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage } from "./types";
-import { findFFMPEGPath, setFFMPEGPath } from "./helpers";
+import { findFFMPEGPath, setFFMPEGPath, downloadFFMPEG, unzip } from "./helpers";
 
 const { core, event, utils, file, console, sidebar, mpv } = iina;
 const input = (iina as any).input;
@@ -259,9 +259,10 @@ event.on("iina.window-loaded", () => {
 
     sidebar.onMessage("test-find-ffmpeg", async () => {
         try {
+            const dataBinPath = utils.resolvePath("@data/bin");
             const { status, stdout } = await utils.exec("/bin/bash", [
                 "-ilc",
-                "export PATH=$PATH:$HOME/.local/bin:$HOME/miniconda3/envs/default/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin && which -a ffmpeg"
+                `export PATH=$PATH:$HOME/.local/bin:$HOME/miniconda3/envs/default/bin:/opt/homebrew/bin:/usr/local/bin:/opt/local/bin:"${dataBinPath}" && which -a ffmpeg`
             ]);
             
             if (status === 0 && stdout) {
@@ -278,6 +279,32 @@ event.on("iina.window-loaded", () => {
         } catch (error) {
             core.osd(`Error finding FFmpeg: ${error}`);
         }
+    });
+
+    sidebar.onMessage("download-ffmpeg", async () => {
+        sidebar.postMessage("ffmpeg-download-progress", { status: "Downloading FFmpeg (this may take a minute)..." });
+        
+        const downloaded = await downloadFFMPEG();
+        if (downloaded === true) {
+            sidebar.postMessage("ffmpeg-download-progress", { status: "Extracting FFmpeg..." });
+            
+            const unzipStatus = await unzip();
+            if (unzipStatus === 0) {
+                const binaryPath = utils.resolvePath("@data/bin/ffmpeg");
+                // Ensure executable permissions
+                await utils.exec("/bin/chmod", ["+x", binaryPath]);
+                
+                const success = setFFMPEGPath(binaryPath);
+                if (success) {
+                    currentFFMPEGPath = binaryPath;
+                    sidebar.postMessage("ffmpeg-download-progress", { status: "FFmpeg downloaded and installed successfully!" });
+                    sidebar.postMessage("ffmpeg-path-update", { path: binaryPath });
+                    return;
+                }
+            }
+        }
+        
+        sidebar.postMessage("ffmpeg-download-progress", { status: "Failed to download or install FFmpeg." });
     });
 
     setupEventListeners();

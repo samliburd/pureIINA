@@ -26,6 +26,7 @@ const App = () => {
   const [ffmpegPath, setFFMPEGPath] = useState('');
   const [isFFMPEGPathFocused, setIsFFMPEGPathFocused] = useState(false);
   const [foundFFMPEGPaths, setFoundFFMPEGPaths] = useState<string[] | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
   const [videoDimensions, setVideoDimensions] = useState<{
     width: number;
     height: number;
@@ -92,6 +93,10 @@ const App = () => {
 
       window.iina.onMessage('ffmpeg-paths-found', (data: { paths: string[] }) => {
         setFoundFFMPEGPaths(data.paths);
+      });
+
+      window.iina.onMessage('ffmpeg-download-progress', (data: { status: string }) => {
+        setDownloadProgress(data.status);
       });
 
       window.iina.postMessage('request-sync', {});
@@ -186,6 +191,8 @@ const App = () => {
 
   const handleFFMPEGPathChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFFMPEGPath(e.target.value);
+    setFoundFFMPEGPaths(null);
+    setDownloadProgress(null);
   };
 
   const handleFFMPEGPathBlur = (e: FocusEvent<HTMLInputElement>) => {
@@ -236,17 +243,23 @@ const App = () => {
         />
       </div>
 
-      <div className="input-group">
+      <div 
+        className="input-group"
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsFFMPEGPathFocused(false);
+            setFoundFFMPEGPaths(null);
+            setDownloadProgress(null);
+          }
+        }}
+      >
         <label>FFmpeg Path</label>
         <input
           type="text"
           value={ffmpegPath}
           onChange={handleFFMPEGPathChange}
           onFocus={() => setIsFFMPEGPathFocused(true)}
-          onBlur={(e) => {
-            setTimeout(() => setIsFFMPEGPathFocused(false), 200);
-            handleFFMPEGPathBlur(e);
-          }}
+          onBlur={handleFFMPEGPathBlur}
           className={`text-input ${ffmpegPath ? 'found' : ''}`}
           placeholder="/usr/local/bin/ffmpeg"
         />
@@ -273,6 +286,23 @@ const App = () => {
               value={foundFFMPEGPaths.length > 0 ? foundFFMPEGPaths.join('\n') : 'No ffmpeg paths found.'}
               style={{ minHeight: '60px', resize: 'vertical', width: '100%', boxSizing: 'border-box' }}
             />
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                if (window.iina) {
+                  window.iina.postMessage('download-ffmpeg', {});
+                }
+              }}
+              className="action-btn"
+              style={{ marginTop: '8px', width: '100%' }}
+            >
+              Download ffmpeg
+            </button>
+            {downloadProgress && (
+              <div style={{ marginTop: '8px', fontSize: '0.9em', color: 'var(--text-color)', textAlign: 'left' }}>
+                {downloadProgress}
+              </div>
+            )}
           </div>
         )}
       </div>
