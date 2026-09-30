@@ -3,7 +3,7 @@ import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
 import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage } from "./types";
 import { findFFMPEGPath, setFFMPEGPath, downloadFFMPEG, unzip } from "./helpers";
 
-const { core, event, utils, file, console, sidebar, mpv } = iina;
+const { core, event, utils, file, console, sidebar, mpv, input, overlay } = iina;
 const input = (iina as any).input;
 
 // Initialize Core Logic
@@ -13,41 +13,6 @@ const videoProcessor = new VideoProcessor(appState);
 let currentFFMPEGPath: string | null = null;
 
 function setupEventListeners(): void {
-    input.onMouseDown(input.MOUSE, () => {
-        input.onMouseUp(input.MOUSE, ({ x, y }: { x: number; y: number }) => {
-            // 1. Let the processor sort out where this click belongs
-            videoProcessor.handleMouseClick(x, y);
-
-            // 2. Send the updated state to React
-            sendClickState();
-            return true;
-        });
-        return true;
-    });
-
-    input.onKeyDown("c", () => {
-        if (!appState.isWaitingForSecondClick) {
-            appState.isWaitingForSecondClick = true;
-            core.osd(
-                "Press 'c' again to cancel or click to set the second position.",
-            );
-        } else {
-            appState.isWaitingForSecondClick = false;
-            core.osd("Waiting for second click cancelled.");
-        }
-        // Sync React UI with the "c" keypress
-        sendClickState();
-        return true;
-    });
-
-    input.onKeyDown("alt+c", () => {
-        appState.reset();
-        core.osd("Crop cancelled.");
-        // Sync React UI after a reset
-        sendClickState();
-        return true;
-    });
-
     input.onKeyDown("alt+k", () => {
         videoProcessor.copyCommandToClipboard();
         return true;
@@ -115,10 +80,8 @@ function startIntervals(): void {
             showHud: appState.showHud,
             videoTrack: getVideoTrackInfo()
         };
-        sidebar.postMessage("video-update", { 
-            videoWidth: payload.videoWidth, 
-            videoHeight: payload.videoHeight 
-        });
+        sidebar.postMessage("video-update", payload);
+        overlay.postMessage("video-update", payload);
     }, 500);
 
     setInterval(() => {
@@ -126,35 +89,29 @@ function startIntervals(): void {
     }, 500);
 }
 
-function sendClickState(): void {
-    // Use the scale calculated by videoProcessor (fallback to 1 if it hasn't calculated yet)
-    const scale = appState.scale || 1;
-
+function sendCropState(): void {
     const payload: IPCClickMessage = {
-        firstClick: appState.firstClickPos,
-        secondClick: appState.secondClickPos,
-
-        // Normalize the individual clicks using the backend's scale
-        normFirstClick: {
-            x: Math.round(appState.firstClickPos.x * scale),
-            y: Math.round(appState.firstClickPos.y * scale),
-        },
-        normSecondClick: {
-            x: Math.round(appState.secondClickPos.x * scale),
-            y: Math.round(appState.secondClickPos.y * scale),
-        },
-
-        // Send the final crop rectangle already calculated by CoordinateUtils in core.js
+        firstClick: { x: 0, y: 0 }, // legacy
+        secondClick: { x: 0, y: 0 }, // legacy
+        normFirstClick: { x: 0, y: 0 }, // legacy
+        normSecondClick: { x: 0, y: 0 }, // legacy
         cropBox: appState.normalizedCoordinates,
-
-        isWaiting: appState.isWaitingForSecondClick,
+        isWaiting: false,
     };
 
     sidebar.postMessage("click-update", payload);
+    overlay.postMessage("click", payload);
+
+    if (appState.useCrop || appState.showHud) {
+        overlay.show();
+    } else {
+        overlay.hide();
+    }
 }
 
 event.on("iina.window-loaded", () => {
     sidebar.loadFile("dist/ui/sidebar/index.html");
+    overlay.loadFile("dist/ui/overlay/index.html");
     
     findFFMPEGPath().then((path) => {
         if (path) {
@@ -234,13 +191,13 @@ event.on("iina.window-loaded", () => {
 
     sidebar.onMessage("toggle-crop", () => {
         videoProcessor.toggleCrop();
-        sendClickState();
+        sendCropState();
         broadcastCommand();
     });
 
     sidebar.onMessage("set-crop-string", (data: IPCSetCropStringMessage) => {
         if (videoProcessor.setCropFromString(data.cropString)) {
-            sendClickState();
+            sendCropState();
             broadcastCommand();
         }
     });

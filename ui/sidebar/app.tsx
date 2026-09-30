@@ -31,6 +31,13 @@ const App = () => {
     width: number;
     height: number;
   } | null>(null);
+  const [videoFrame, setVideoFrame] = useState<{
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [videoScale, setVideoScale] = useState<number>(1);
 
   useEffect(() => {
     if (window.iina) {
@@ -81,12 +88,18 @@ const App = () => {
       );
       window.iina.onMessage(
         'video-update',
-        (data: { videoWidth: number; videoHeight: number }) => {
+        (data: { videoWidth: number; videoHeight: number; videoFrame?: { x: number; y: number; width: number; height: number }; scale?: number }) => {
           if (data.videoWidth > 0 && data.videoHeight > 0) {
             setVideoDimensions({
               width: data.videoWidth,
               height: data.videoHeight,
             });
+          }
+          if (data.videoFrame) {
+            setVideoFrame(data.videoFrame);
+          }
+          if (data.scale) {
+            setVideoScale(data.scale);
           }
         }
       );
@@ -406,6 +419,15 @@ const App = () => {
           className={`result-message ${resultMessage.error ? 'error' : 'success'}`}
         >
           {resultMessage.text}
+        </div>
+      )}
+
+      {videoFrame && (
+        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', fontSize: '0.8em', color: 'var(--text-color)' }}>
+          <strong>Debug: Window Frame</strong><br />
+          x: {videoFrame.x}, y: {videoFrame.y}<br />
+          width: {videoFrame.width}, height: {videoFrame.height}<br />
+          scale: {videoScale.toFixed(2)}
         </div>
       )}
     </div>
