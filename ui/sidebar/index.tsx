@@ -1,9 +1,10 @@
-import "../shared.scss";
+import "./sidebar.scss";
 
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import App from "./app";
 
 document.addEventListener("DOMContentLoaded", () => {
-  ReactDOM.render(<App>Hello, world!</App>, document.getElementById("root"));
+  const root = createRoot(document.getElementById("root")!);
+  root.render(<App />);
 });
