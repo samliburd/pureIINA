@@ -40,13 +40,8 @@ export interface IPCUpdateMessage {
     videoTrack?: VideoTrackInfo | null;
 }
 
-export interface IPCClickMessage {
-    firstClick: Point;
-    secondClick: Point;
-    normFirstClick: Point;
-    normSecondClick: Point;
+export interface IPCCropUpdateMessage {
     cropBox: Rect | null;
-    isWaiting: boolean;
 }
 
 export interface FFMPEGCommandResult {

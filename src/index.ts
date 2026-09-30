@@ -1,6 +1,6 @@
 import { AppState, VideoProcessor } from "./core";
 import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
-import { IPCUpdateMessage, IPCClickMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage } from "./types";
+import { IPCUpdateMessage, IPCCropUpdateMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage } from "./types";
 import { findFFMPEGPath, setFFMPEGPath, downloadFFMPEG, unzip } from "./helpers";
 
 const { core, event, utils, file, console, sidebar, mpv, input, overlay } = iina;
@@ -90,17 +90,12 @@ function startIntervals(): void {
 }
 
 function sendCropState(): void {
-    const payload: IPCClickMessage = {
-        firstClick: { x: 0, y: 0 }, // legacy
-        secondClick: { x: 0, y: 0 }, // legacy
-        normFirstClick: { x: 0, y: 0 }, // legacy
-        normSecondClick: { x: 0, y: 0 }, // legacy
+    const payload: IPCCropUpdateMessage = {
         cropBox: appState.normalizedCoordinates,
-        isWaiting: false,
     };
 
-    sidebar.postMessage("click-update", payload);
-    overlay.postMessage("click", payload);
+    sidebar.postMessage("crop-update", payload);
+    overlay.postMessage("crop-update", payload);
 
     if (appState.useCrop || appState.showHud) {
         overlay.show();

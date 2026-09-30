@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { IPCUpdateMessage, IPCClickMessage } from "../../src/types";
+import { IPCUpdateMessage, IPCCropUpdateMessage } from "../../src/types";
 
 const App: React.FC = () => {
     const [videoFrame, setVideoFrame] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -15,7 +15,7 @@ const App: React.FC = () => {
                 if (data.videoWidth && data.videoHeight) setVideoDimensions({ width: data.videoWidth, height: data.videoHeight });
             });
 
-            window.iina.onMessage("click", (data: IPCClickMessage) => {
+            window.iina.onMessage("crop-update", (data: IPCCropUpdateMessage) => {
                 setCropBox(data.cropBox);
             });
         }

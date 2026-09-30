@@ -7,7 +7,7 @@ import {
   IPCCommandResultMessage,
   IPCFFMPEGProgressMessage,
   IPCSetCropStringMessage,
-  IPCClickMessage,
+  IPCCropUpdateMessage,
 } from '../../src/types';
 
 const App = () => {
@@ -59,7 +59,7 @@ const App = () => {
       window.iina.onMessage('ffmpeg-path-update', (data: { path: string | null }) => {
         setFFMPEGPath(data.path || '');
       });
-      window.iina.onMessage('click-update', (data: IPCClickMessage) => {
+      window.iina.onMessage('crop-update', (data: IPCCropUpdateMessage) => {
         if (data.cropBox) {
           const cropStr = `${data.cropBox.width}:${data.cropBox.height}:${data.cropBox.x}:${data.cropBox.y}`;
           setCropString(cropStr);
