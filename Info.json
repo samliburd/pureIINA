@@ -1,0 +1,24 @@
+{
+  "name": "iinatools",
+  "identifier": "com.iinatools.plugin",
+  "version": "1.0.0",
+  "description": "Description here",
+  "author": {
+    "name": "samliburd",
+    "email": "developers@iina.io",
+    "url": "https://iina.io"
+  },
+  "entry": "dist/index.js",
+  "permissions": [
+    "show-osd",
+    "show-alert",
+    "video-overlay",
+    "network-request",
+    "file-system"
+  ],
+  "sidebarTab": {
+    "name": "Tab"
+  },
+  "allowedDomains": ["*"],
+  "preferenceDefaults": {}
+}
