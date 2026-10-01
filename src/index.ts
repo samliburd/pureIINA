@@ -3,8 +3,8 @@ import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
 import { IPCUpdateMessage, IPCCropUpdateMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage } from "./types";
 import { findFFMPEGPath, setFFMPEGPath, downloadFFMPEG, unzip } from "./helpers";
 
-const { core, event, utils, file, console, sidebar, mpv, input, overlay } = iina;
-const input = (iina as any).input;
+const { core, event, utils, file, console, sidebar, mpv, overlay } = iina;
+
 
 // Initialize Core Logic
 const appState = new AppState();
