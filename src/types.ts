@@ -37,6 +37,7 @@ export interface IPCUpdateMessage {
     scale: number;
     showHud: boolean;
     videoTrack?: VideoTrackInfo | null;
+    isPaused: boolean;
 }
 
 export interface IPCCropUpdateMessage {
@@ -61,6 +62,7 @@ export interface IPCSyncStateMessage {
     cropString: string;
     showHud: boolean;
     ffmpegPath: string | null;
+    isPaused: boolean;
 }
 
 export interface IPCSetFilenameMessage {

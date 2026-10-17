@@ -73,7 +73,8 @@ function broadcastVideoState(): void {
         videoHeight: core.status.videoHeight || 0,
         scale: appState.scale || 1,
         showHud: appState.showHud,
-        videoTrack: getVideoTrackInfo()
+        videoTrack: getVideoTrackInfo(),
+        isPaused: core.status.paused
     };
     
     sidebar.postMessage("video-update", payload);
@@ -156,7 +157,8 @@ event.on("iina.window-loaded", () => {
             useCrop: appState.useCrop,
             cropString: CoordinateUtils.cropToCoordsString(appState.normalizedCoordinates) || "",
             showHud: appState.showHud,
-            ffmpegPath: currentFFMPEGPath
+            ffmpegPath: currentFFMPEGPath,
+            isPaused: core.status.paused
         };
         sidebar.postMessage("sync-state", payload);
     });
@@ -265,4 +267,7 @@ event.on("iina.window-loaded", () => {
     event.on("iina.window-resized", broadcastVideoState);
     event.on("iina.window-moved", broadcastVideoState);
     event.on("iina.window-size-adjusted", broadcastVideoState);
+    
+    // MPV properties mapped to IINA events
+    event.on("mpv.pause.changed", broadcastVideoState);
 });

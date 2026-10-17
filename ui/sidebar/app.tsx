@@ -22,6 +22,7 @@ const App = () => {
   } | null>(null);
   const [useCrop, setUseCrop] = useState(false);
   const [showHud, setShowHud] = useState(false);
+  const [isPaused, setIsPaused] = useState(true);
   const [cropString, setCropString] = useState('');
   const [ffmpegPath, setFFMPEGPath] = useState('');
   const [isFFMPEGSectionCollapsed, setIsFFMPEGSectionCollapsed] = useState(true);
@@ -60,6 +61,7 @@ const App = () => {
         if (data.ffmpegPath) {
           setFFMPEGPath(data.ffmpegPath);
         }
+        setIsPaused(data.isPaused);
       });
       window.iina.onMessage('ffmpeg-path-update', (data: { path: string | null }) => {
         setFFMPEGPath(data.path || '');
@@ -93,7 +95,7 @@ const App = () => {
       );
       window.iina.onMessage(
         'video-update',
-        (data: { videoWidth: number; videoHeight: number; videoFrame?: { x: number; y: number; width: number; height: number }; scale?: number }) => {
+        (data: { videoWidth: number; videoHeight: number; videoFrame?: { x: number; y: number; width: number; height: number }; scale?: number; isPaused?: boolean }) => {
           if (data.videoWidth > 0 && data.videoHeight > 0) {
             setVideoDimensions({
               width: data.videoWidth,
@@ -105,6 +107,9 @@ const App = () => {
           }
           if (data.scale) {
             setVideoScale(data.scale);
+          }
+          if (data.isPaused !== undefined) {
+            setIsPaused(data.isPaused);
           }
         }
       );
@@ -130,6 +135,12 @@ const App = () => {
   const handleSetEnd = () => {
     if (window.iina) {
       window.iina.postMessage('set-end-time', {});
+    }
+  };
+
+  const handleTogglePause = () => {
+    if (window.iina) {
+      window.iina.postMessage('toggle-pause', {});
     }
   };
 
@@ -246,6 +257,11 @@ const App = () => {
             Set End
           </button>
           <span>{endTime}</span>
+        </div>
+        <div className="time-row" style={{ marginTop: '8px', justifyContent: 'center' }}>
+          <button onClick={handleTogglePause} className="action-btn" style={{ width: '100%' }}>
+            {isPaused ? 'Play' : 'Pause'}
+          </button>
         </div>
       </div>
 
