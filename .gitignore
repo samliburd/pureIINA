@@ -129,3 +129,5 @@ package-lock.json
 pureiina/
 iina-plugin-definition/
 iina-crash*
+.agents/
+AGENTS.md
