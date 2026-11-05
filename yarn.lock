@@ -1621,10 +1621,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"iina-plugin-definition@npm:^0.0.7":
-  version: 0.0.7
-  resolution: "iina-plugin-definition@npm:0.0.7"
-  checksum: 10c0/75e851efa112dda3f959bfca622fac5c593a0be0199d28a6250e41c7b9526a9264c360c4f2fa2be7319673dc18630ff3398cc05113b8c11c2330fdf7b4292469
+"iina-plugin-definition@npm:^0.99.5":
+  version: 0.99.5
+  resolution: "iina-plugin-definition@npm:0.99.5"
+  checksum: 10c0/f15d260a556a641f8e5b732a55bd6399f450f979372f06f90ac1db780a4464350e2ce6b6c224d5f8e5c265621ebfc69f3f36f4c66fd9c0d079232d2b22bbed9c
   languageName: node
   linkType: hard
 
@@ -1635,7 +1635,7 @@ __metadata:
     "@parcel/transformer-sass": "npm:^2.8.3"
     "@types/react": "npm:^19.3.0"
     "@types/react-dom": "npm:^19.3.0"
-    iina-plugin-definition: "npm:^0.0.7"
+    iina-plugin-definition: "npm:^0.99.5"
     parcel: "npm:^2.8.3"
     parcel-optimizer-webview: "git+https://github.com/iina/parcel-optimizer-webview.git"
     prettier: "npm:^2.8.8"
