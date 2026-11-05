@@ -129,7 +129,4 @@ package-lock.json
 pureiina/
 iina-plugin-definition/
 iina-crash*
-.agents/
-AGENTS.md
-skills-lock.json
 *.mp4
