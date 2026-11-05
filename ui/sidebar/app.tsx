@@ -10,6 +10,7 @@ import {
   IPCCropUpdateMessage,
   IPCSetCodecMessage,
   VideoCodec,
+  IPCSetTLSVerifyMessage,
 } from '../../src/types';
 
 const App = () => {
@@ -28,6 +29,8 @@ const App = () => {
   const [isPaused, setIsPaused] = useState(true);
   const [cropString, setCropString] = useState('');
   const [ffmpegPath, setFFMPEGPath] = useState('');
+  const [tlsVerify, setTlsVerify] = useState(true);
+  const [inputFileUrl, setInputFileUrl] = useState('');
   const [isFFMPEGSectionCollapsed, setIsFFMPEGSectionCollapsed] = useState(true);
   const [isFFMPEGPathFocused, setIsFFMPEGPathFocused] = useState(false);
 
@@ -69,6 +72,12 @@ const App = () => {
         if (data.codec) {
           setCodec(data.codec);
         }
+        if (data.tlsVerify !== undefined) {
+          setTlsVerify(data.tlsVerify);
+        }
+        if (data.inputFileUrl !== undefined) {
+          setInputFileUrl(data.inputFileUrl);
+        }
       });
       window.iina.onMessage('ffmpeg-path-update', (data: { path: string | null }) => {
         setFFMPEGPath(data.path || '');
@@ -102,7 +111,7 @@ const App = () => {
       );
       window.iina.onMessage(
         'video-update',
-        (data: { videoWidth: number; videoHeight: number; videoFrame?: { x: number; y: number; width: number; height: number }; scale?: number; offsetX?: number; offsetY?: number; isPaused?: boolean }) => {
+        (data: { videoWidth: number; videoHeight: number; videoFrame?: { x: number; y: number; width: number; height: number }; scale?: number; offsetX?: number; offsetY?: number; isPaused?: boolean; inputFileUrl?: string }) => {
           if (data.videoWidth > 0 && data.videoHeight > 0) {
             setVideoDimensions({
               width: data.videoWidth,
@@ -120,6 +129,9 @@ const App = () => {
           }
           if (data.isPaused !== undefined) {
             setIsPaused(data.isPaused);
+          }
+          if (data.inputFileUrl !== undefined) {
+            setInputFileUrl(data.inputFileUrl);
           }
         }
       );
@@ -249,6 +261,19 @@ const App = () => {
     }
   };
 
+  const isNetworkUrl =
+    inputFileUrl.toLowerCase().startsWith('http://') ||
+    inputFileUrl.toLowerCase().startsWith('https://');
+
+  const handleTLSVerifyChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setTlsVerify(checked);
+    if (window.iina) {
+      const payload: IPCSetTLSVerifyMessage = { tlsVerify: checked };
+      window.iina.postMessage('set-tls-verify', payload);
+    }
+  };
+
   const handleShowCommand = () => {
     if (window.iina) {
       window.iina.postMessage('get-command', {});
@@ -375,6 +400,17 @@ const App = () => {
                   {downloadProgress}
                 </div>
               )}
+            </div>
+          )}
+          {isNetworkUrl && (
+            <div className="checkbox-row">
+              <input
+                type="checkbox"
+                id="tls-verify"
+                checked={tlsVerify}
+                onChange={handleTLSVerifyChange}
+              />
+              <label htmlFor="tls-verify">TLS verify</label>
             </div>
           )}
         </div>

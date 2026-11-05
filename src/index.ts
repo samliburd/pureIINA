@@ -1,6 +1,6 @@
 import { AppState, VideoProcessor } from "./core";
 import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
-import { IPCUpdateMessage, IPCCropUpdateMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage, IPCSetCodecMessage, VideoCodec } from "./types";
+import { IPCUpdateMessage, IPCCropUpdateMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage, IPCSetCodecMessage, VideoCodec, IPCSetTLSVerifyMessage } from "./types";
 import { findFFMPEGPath, setFFMPEGPath, downloadFFMPEG, unzip } from "./helpers";
 
 const { core, event, utils, file, console, sidebar, mpv, overlay, preferences } = iina;
@@ -80,7 +80,8 @@ function broadcastVideoState(): void {
         offsetY: appState.offsetY || 0,
         showHud: appState.showHud,
         videoTrack: getVideoTrackInfo(),
-        isPaused: core.status.paused
+        isPaused: core.status.paused,
+        inputFileUrl: appState.getInputUrl()
     };
     
     sidebar.postMessage("video-update", payload);
@@ -120,6 +121,7 @@ event.on("iina.window-loaded", () => {
         const duration = appState.getFormattedDuration();
         appState.endTime = duration;
         appState.timeArr[1] = duration;
+        appState.tlsVerify = true;
 
         // Respect default crop mode preference
         const defaultCrop = preferences.get("crop_mode_default");
@@ -174,8 +176,15 @@ event.on("iina.window-loaded", () => {
             ffmpegPath: currentFFMPEGPath,
             isPaused: core.status.paused,
             codec: appState.codec,
+            inputFileUrl: appState.getInputUrl(),
+            tlsVerify: appState.tlsVerify,
         };
         sidebar.postMessage("sync-state", payload);
+    });
+
+    sidebar.onMessage("set-tls-verify", (data: IPCSetTLSVerifyMessage) => {
+        appState.tlsVerify = Boolean(data.tlsVerify);
+        broadcastCommand();
     });
 
     sidebar.onMessage("set-filename", (data: IPCSetFilenameMessage) => {

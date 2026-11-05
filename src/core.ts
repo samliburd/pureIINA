@@ -28,6 +28,7 @@ export class AppState {
   endTime: string;
   isHDR: boolean = false;
   codec: VideoCodec = DEFAULT_CODEC;
+  tlsVerify: boolean = true;
 
   constructor() {
     this.dimensions = null;
@@ -79,6 +80,33 @@ export class AppState {
 
   getCurrentFilename(): string {
     return decodeURIComponent(core.status.url.replace("file://", ""));
+  }
+
+  getInputUrl(): string {
+    return core.status.url || mpv.getString("path") || "";
+  }
+
+  isNetworkUrl(): boolean {
+    const url = this.getInputUrl().toLowerCase();
+    return url.startsWith("http://") || url.startsWith("https://");
+  }
+
+  getDefaultOutputFilename(): string {
+    const fn = this.getCurrentFilename();
+    if (this.isNetworkUrl()) {
+      try {
+        const cleanUrl = fn.split("?")[0].split("#")[0];
+        const lastPart = cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1);
+        if (lastPart && lastPart.includes(".")) {
+          const dotIdx = lastPart.lastIndexOf(".");
+          return `${lastPart.substring(0, dotIdx)}.output.${FFMPEG_DEFAULTS.container}`;
+        }
+      } catch {
+        // Fallback to generic output name
+      }
+      return `output.${FFMPEG_DEFAULTS.container}`;
+    }
+    return `${fn}.output.${FFMPEG_DEFAULTS.container}`;
   }
 
   getInputFileDirectory(): string | null {
@@ -133,7 +161,7 @@ export class FFMPEGCommandBuilder {
 
   _buildDirectCommand(filename: string): FFMPEGCommandResult | null {
     if (!this.state.outputFilename) {
-      this.state.outputFilename = `${filename}.output.${FFMPEG_DEFAULTS.container}`;
+      this.state.outputFilename = this.state.getDefaultOutputFilename();
     }
 
     // Output dir precedence: Session outputDir > Preferences output_dir > Input file directory
@@ -150,7 +178,11 @@ export class FFMPEGCommandBuilder {
       ? this.state.outputFilename 
       : `${resolvedOutputDir}/${this.state.outputFilename}`;
 
+    const isNetwork = filename.startsWith("http://") || filename.startsWith("https://") || this.state.isNetworkUrl();
+    const tlsArgs = (!this.state.tlsVerify && isNetwork) ? ["-tls_verify", "0"] : [];
+
     const baseArgs = [
+      ...tlsArgs,
       "-ss",
       this.state.timeArr[0],
       "-to",
@@ -233,9 +265,10 @@ export class FFMPEGCommandBuilder {
 
     const resolvedOutputDir = this.state.getResolvedOutputDir() || "";
     const basePath = resolvedOutputDir ? `${resolvedOutputDir}/` : "";
-    const finalOutputPath = this.state.outputFilename.startsWith("/") 
-      ? this.state.outputFilename 
-      : `${basePath}${this.state.outputFilename}`;
+    const outputName = this.state.outputFilename || this.state.getDefaultOutputFilename();
+    const finalOutputPath = outputName.startsWith("/") 
+      ? outputName 
+      : `${basePath}${outputName}`;
 
     const codecConfig =
       CODEC_CONFIGS[this.state.codec] || CODEC_CONFIGS[DEFAULT_CODEC];
@@ -243,7 +276,10 @@ export class FFMPEGCommandBuilder {
     const presetArgs = codecConfig.preset ? ` -preset ${codecConfig.preset}` : "";
     const tagArgs = codecConfig.tag ? ` -tag:v ${codecConfig.tag}` : "";
 
-    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${escapedFilename} ${cropFilter}\n-c:v ${codecConfig.encoder} ${colorArgs}${qualityArgs}${presetArgs}${tagArgs} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${finalOutputPath} && echo ${finalOutputPath}`;
+    const isNetwork = filename.startsWith("http://") || filename.startsWith("https://") || this.state.isNetworkUrl();
+    const tlsOption = (!this.state.tlsVerify && isNetwork) ? "-tls_verify 0 " : "";
+
+    return `ffmpeg ${tlsOption}-ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${escapedFilename} ${cropFilter}\n-c:v ${codecConfig.encoder} ${colorArgs}${qualityArgs}${presetArgs}${tagArgs} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${finalOutputPath} && echo ${finalOutputPath}`;
   }
 }
 

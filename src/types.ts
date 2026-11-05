@@ -46,6 +46,7 @@ export interface IPCUpdateMessage {
     showHud: boolean;
     videoTrack?: VideoTrackInfo | null;
     isPaused: boolean;
+    inputFileUrl?: string;
 }
 
 export interface IPCCropUpdateMessage {
@@ -72,6 +73,12 @@ export interface IPCSyncStateMessage {
     ffmpegPath: string | null;
     isPaused: boolean;
     codec: VideoCodec;
+    inputFileUrl?: string;
+    tlsVerify?: boolean;
+}
+
+export interface IPCSetTLSVerifyMessage {
+    tlsVerify: boolean;
 }
 
 export interface IPCSetCodecMessage {
