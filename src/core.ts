@@ -14,6 +14,8 @@ export class AppState {
   dimensions: Dimensions | null = null;
   frame: Rect | null = null;
   scale: number | null = null;
+  offsetX: number = 0;
+  offsetY: number = 0;
   rectangleCoordinates: Rect | null = null;
   normalizedCoordinates: Rect | null = null;
   isHidden: boolean = true;
@@ -239,8 +241,42 @@ export class VideoProcessor {
       videoHeight: core.status.videoHeight,
     };
     this.state.frame = core.window.frame;
-    this.state.scale =
-      this.state.dimensions.videoWidth / this.state.frame.width;
+
+    const windowWidth = this.state.frame.width;
+    const windowHeight = this.state.frame.height;
+
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (windowWidth > 0 && windowHeight > 0) {
+      let videoAspect = this.state.dimensions.videoWidth / this.state.dimensions.videoHeight;
+      try {
+        const videoParams = mpv.getNative<Record<string, any>>("video-params");
+        if (videoParams && videoParams.aspect && Number(videoParams.aspect) > 0) {
+          videoAspect = Number(videoParams.aspect);
+        }
+      } catch {}
+
+      const windowAspect = windowWidth / windowHeight;
+      if (windowAspect > videoAspect) {
+        // Pillarboxing: black bars on left and right
+        const dispW = windowHeight * videoAspect;
+        offsetX = (windowWidth - dispW) / 2;
+        offsetY = 0;
+        scale = this.state.dimensions.videoHeight / windowHeight;
+      } else {
+        // Letterboxing: black bars on top and bottom
+        const dispH = windowWidth / videoAspect;
+        offsetX = 0;
+        offsetY = (windowHeight - dispH) / 2;
+        scale = this.state.dimensions.videoWidth / windowWidth;
+      }
+    }
+
+    this.state.scale = scale;
+    this.state.offsetX = offsetX;
+    this.state.offsetY = offsetY;
 
 
 

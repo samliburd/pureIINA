@@ -47,6 +47,7 @@ const App = () => {
     y: number;
   } | null>(null);
   const [videoScale, setVideoScale] = useState<number>(1);
+  const [videoOffset, setVideoOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     if (window.iina) {
@@ -101,7 +102,7 @@ const App = () => {
       );
       window.iina.onMessage(
         'video-update',
-        (data: { videoWidth: number; videoHeight: number; videoFrame?: { x: number; y: number; width: number; height: number }; scale?: number; isPaused?: boolean }) => {
+        (data: { videoWidth: number; videoHeight: number; videoFrame?: { x: number; y: number; width: number; height: number }; scale?: number; offsetX?: number; offsetY?: number; isPaused?: boolean }) => {
           if (data.videoWidth > 0 && data.videoHeight > 0) {
             setVideoDimensions({
               width: data.videoWidth,
@@ -113,6 +114,9 @@ const App = () => {
           }
           if (data.scale) {
             setVideoScale(data.scale);
+          }
+          if (data.offsetX !== undefined && data.offsetY !== undefined) {
+            setVideoOffset({ x: data.offsetX, y: data.offsetY });
           }
           if (data.isPaused !== undefined) {
             setIsPaused(data.isPaused);
@@ -259,7 +263,6 @@ const App = () => {
 
   return (
     <div className="sidebar-container">
-      <h2>pureIINA</h2>
       <div className="time-controls">
         <div className="time-row">
           <button onClick={handleSetStart} className="action-btn start-end">
@@ -308,7 +311,7 @@ const App = () => {
 
       <div className="section-header" onClick={() => setIsFFMPEGSectionCollapsed(!isFFMPEGSectionCollapsed)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <h3 style={{ margin: 0, fontSize: '0.9em', fontWeight: 'bold' }}>FFmpeg Settings</h3>
-        <span>{isFFMPEGSectionCollapsed ? '▼' : '▲'}</span>
+        <span style={{fontFamily: 'Arial', fontWeight: 'normal' }}>{isFFMPEGSectionCollapsed ? '▼' : '▲'}</span>
       </div>
 
       {!isFFMPEGSectionCollapsed && (
@@ -484,7 +487,8 @@ const App = () => {
           <strong>Debug: Window Frame</strong><br />
           x: {videoFrame.x}, y: {videoFrame.y}<br />
           width: {videoFrame.width}, height: {videoFrame.height}<br />
-          scale: {videoScale.toFixed(2)}
+          scale: {videoScale.toFixed(2)}<br />
+          offset: x: {videoOffset.x.toFixed(1)}, y: {videoOffset.y.toFixed(1)}
         </div>
       )}
     </div>

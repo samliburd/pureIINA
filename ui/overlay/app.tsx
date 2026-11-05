@@ -5,6 +5,8 @@ const App: React.FC = () => {
     const [videoFrame, setVideoFrame] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
     const [videoDimensions, setVideoDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
     const [videoScale, setVideoScale] = useState<number>(1);
+    const [offsetX, setOffsetX] = useState<number>(0);
+    const [offsetY, setOffsetY] = useState<number>(0);
     const [cropBox, setCropBox] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
 
     useEffect(() => {
@@ -12,6 +14,8 @@ const App: React.FC = () => {
             window.iina.onMessage("video-update", (data: IPCUpdateMessage & { videoWidth?: number, videoHeight?: number }) => {
                 if (data.videoFrame) setVideoFrame(data.videoFrame);
                 if (data.scale !== undefined) setVideoScale(data.scale);
+                if (data.offsetX !== undefined) setOffsetX(data.offsetX);
+                if (data.offsetY !== undefined) setOffsetY(data.offsetY);
                 if (data.videoWidth && data.videoHeight) setVideoDimensions({ width: data.videoWidth, height: data.videoHeight });
             });
 
@@ -28,10 +32,9 @@ const App: React.FC = () => {
 
         const safeScale = videoScale || 1;
         
-        // The IINA overlay webview is natively bound to the video frame size,
-        // so we DO NOT add videoFrame.x or videoFrame.y here.
-        const left = (cropBox.x / safeScale);
-        const top = (cropBox.y / safeScale);
+        // Scale cropBox to display points and offset by letterbox/pillarbox margins
+        const left = offsetX + (cropBox.x / safeScale);
+        const top = offsetY + (cropBox.y / safeScale);
         const width = cropBox.width / safeScale;
         const height = cropBox.height / safeScale;
 

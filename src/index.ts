@@ -76,6 +76,8 @@ function broadcastVideoState(): void {
         videoWidth: core.status.videoWidth || 0,
         videoHeight: core.status.videoHeight || 0,
         scale: appState.scale || 1,
+        offsetX: appState.offsetX || 0,
+        offsetY: appState.offsetY || 0,
         showHud: appState.showHud,
         videoTrack: getVideoTrackInfo(),
         isPaused: core.status.paused
@@ -280,6 +282,7 @@ event.on("iina.window-loaded", () => {
     event.on("iina.window-resized", broadcastVideoState);
     event.on("iina.window-moved", broadcastVideoState);
     event.on("iina.window-size-adjusted", broadcastVideoState);
+    event.on("iina.window-fs.changed", broadcastVideoState);
     
     // MPV properties mapped to IINA events
     event.on("mpv.pause.changed", broadcastVideoState);

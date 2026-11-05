@@ -41,6 +41,8 @@ export interface IPCUpdateMessage {
     videoWidth: number;
     videoHeight: number;
     scale: number;
+    offsetX?: number;
+    offsetY?: number;
     showHud: boolean;
     videoTrack?: VideoTrackInfo | null;
     isPaused: boolean;
