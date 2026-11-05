@@ -342,7 +342,7 @@ sequenceDiagram
 #### Step-by-Step Walkthrough
 
 1. **Trigger & Path Verification**: The user clicks "Run FFmpeg". The sidebar posts `run-ffmpeg`. The controller verifies that `currentFFMPEGPath` is valid.
-2. **Command Synthesis**: `FFMPEGCommandBuilder._buildDirectCommand()` constructs the arguments array. It applies seek boundaries (`-ss`, `-to`), input source (`-i`), video filters (`crop=W:H:X:Y` and optional HDR `zscale`/`tonemap` pipeline), encoding parameters (`-c:v libx264 -crf 17 -preset fast`), audio parameters (`-c:a aac -ac 2`), metadata stripping (`-map_metadata -1`), and MP4 container optimization (`-movflags +faststart`).
+2. **Command Synthesis**: `FFMPEGCommandBuilder._buildDirectCommand()` constructs the arguments array. It applies seek boundaries (`-ss`, `-to`), input source (`-i`), video filters (`crop=W:H:X:Y` and optional HDR `zscale`/`tonemap` pipeline), encoding parameters matching the selected codec (e.g., `-c:v libx264 -crf 17 -preset fast`, `-c:v libx265 -crf 22 -preset fast -tag:v hvc1`, or hardware-accelerated `-c:v h264_videotoolbox -q:v 75` / `-c:v hevc_videotoolbox -q:v 75 -tag:v hvc1`), audio parameters (`-c:a aac -ac 2`), metadata stripping (`-map_metadata -1`), and MP4 container optimization (`-movflags +faststart`).
 3. **Output Path Resolution**: If the user has not configured a custom output directory via `set-output-dir`, the builder extracts the input video's parent directory using URI decoding on `core.status.url`.
 4. **Time Calculation**: The processor converts ISO start and end timestamps into seconds, calculating total microsecond duration ($\text{durationUs} = (\text{endSec} - \text{startSec}) \times 1{,}000{,}000$).
 5. **Process Spawning with Progress Flags**: `callFFMPEG()` appends `-progress -` and `-nostats` to the options vector and invokes `iina.utils.exec` with a streaming `stdoutHook`.
@@ -537,12 +537,14 @@ sequenceDiagram
 - **Source File**: [`src/constants.ts`](./src/constants.ts)
 - **Architectural Role**: Immutable encoding configurations and regex definitions.
 
-| Constant             | Type     | Value                                                                                | Description                                                                            |
-| :------------------- | :------- | :----------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
-| `REGEX_WHITESPACE`   | `RegExp` | `/\s/g`                                                                              | Matches whitespace characters for shell path escaping.                                 |
-| `DEFAULT_START_TIME` | `string` | `"00:00:00.000"`                                                                     | Initial cut start timestamp.                                                           |
-| `VIDEO_EXTENSIONS`   | `RegExp` | `/[-\w\s\.]+\.(mp4\|webm\|mkv\|avi\|...)/gim`                                        | Validates standard multimedia file extensions.                                         |
-| `FFMPEG_DEFAULTS`    | `object` | `{ codec: "libx264", crf: 17, preset: "fast", audioCodec: "aac", container: "mp4" }` | Default production encoding parameters balancing visual quality and compression speed. |
+| Constant             | Type                                     | Value                                                                                | Description                                                                            |
+| :------------------- | :--------------------------------------- | :----------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| `REGEX_WHITESPACE`   | `RegExp`                                 | `/\s/g`                                                                              | Matches whitespace characters for shell path escaping.                                 |
+| `DEFAULT_START_TIME` | `string`                                 | `"00:00:00.000"`                                                                     | Initial cut start timestamp.                                                           |
+| `VIDEO_EXTENSIONS`   | `RegExp`                                 | `/[-\w\s\.]+\.(mp4\|webm\|mkv\|avi\|...)/gim`                                        | Validates standard multimedia file extensions.                                         |
+| `DEFAULT_CODEC`      | `VideoCodec`                             | `"x264"`                                                                             | Default selected video encoding codec.                                                 |
+| `CODEC_CONFIGS`      | `Record<VideoCodec, CodecOptionConfig>`  | Configuration map (`x264`, `x265`, `h264_videotoolbox`, `hevc_videotoolbox`)         | Defines encoders, quality parameters (`-crf` / `-q:v`), presets, and container tags.   |
+| `FFMPEG_DEFAULTS`    | `object`                                 | `{ codec: "libx264", crf: 17, preset: "fast", audioCodec: "aac", container: "mp4" }` | Default production encoding parameters balancing visual quality and compression speed. |
 
 ---
 
@@ -561,8 +563,9 @@ sequenceDiagram
 | `IPCCropUpdateMessage`     | `cropBox: Rect \| null`                                                                                                                                          | Bounding box coordinates dispatched to overlay and sidebar.              |
 | `FFMPEGCommandResult`      | `args: string[]`, `outputFilename: string`                                                                                                                       | Structured command components for direct process execution.              |
 | `IPCTimeUpdateMessage`     | `type: "start" \| "end"`, `time: string`                                                                                                                         | Notification of boundary timestamp updates.                              |
-| `IPCSyncStateMessage`      | `startTime`, `endTime`, `filename`, `useCrop`, `cropString`, `showHud`, `ffmpegPath`, `isPaused`                                                                 | Complete snapshot payload sent in response to `request-sync`.            |
+| `IPCSyncStateMessage`      | `startTime`, `endTime`, `filename`, `useCrop`, `cropString`, `showHud`, `ffmpegPath`, `isPaused`, `codec`                                                         | Complete snapshot payload sent in response to `request-sync`.            |
 | `IPCSetFilenameMessage`    | `filename: string`                                                                                                                                               | Payload for updating the target output filename.                         |
+| `IPCSetCodecMessage`       | `codec: VideoCodec`                                                                                                                                              | Payload for updating the active video encoding codec selection.          |
 | `IPCSetFFMPEGPathMessage`  | `path: string`                                                                                                                                                   | Payload for updating the active FFmpeg binary path.                      |
 | `IPCSetCropStringMessage`  | `cropString: string`                                                                                                                                             | Payload for updating crop coordinates from raw string.                   |
 | `IPCCommandResultMessage`  | `command: string`                                                                                                                                                | Formatted shell-escaped FFmpeg CLI string.                               |
@@ -583,6 +586,7 @@ sequenceDiagram
 | `startTime`                | `string`                                    | `'00:00:00.000'` | Cut boundary start time in `HH:MM:SS.mmm` format.                                   |
 | `endTime`                  | `string`                                    | `'-'`            | Cut boundary end time in `HH:MM:SS.mmm` format.                                     |
 | `filename`                 | `string`                                    | `''`             | Target export filename; automatically appends `.mp4` on blur if extension omitted.  |
+| `codec`                    | `VideoCodec`                                | `'x264'`         | Selected video encoder (`x264`, `x265`, `h264_videotoolbox`, `hevc_videotoolbox`).  |
 | `command`                  | `string \| null`                            | `null`           | Displayed shell command string generated by background controller.                  |
 | `progress`                 | `number \| null`                            | `null`           | Active transcode percentage ($0.0 - 100.0$) driving visual progress bar.            |
 | `resultMessage`            | `{ text: string, error: boolean } \| null`  | `null`           | Alert box showing success message or error trace from FFmpeg subprocess.            |

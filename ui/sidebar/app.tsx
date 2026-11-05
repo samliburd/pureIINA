@@ -8,12 +8,15 @@ import {
   IPCFFMPEGProgressMessage,
   IPCSetCropStringMessage,
   IPCCropUpdateMessage,
+  IPCSetCodecMessage,
+  VideoCodec,
 } from '../../src/types';
 
 const App = () => {
   const [startTime, setStartTime] = useState('00:00:00.000');
   const [endTime, setEndTime] = useState('-');
   const [filename, setFilename] = useState('');
+  const [codec, setCodec] = useState<VideoCodec>('x264');
   const [command, setCommand] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [resultMessage, setResultMessage] = useState<{
@@ -62,6 +65,9 @@ const App = () => {
           setFFMPEGPath(data.ffmpegPath);
         }
         setIsPaused(data.isPaused);
+        if (data.codec) {
+          setCodec(data.codec);
+        }
       });
       window.iina.onMessage('ffmpeg-path-update', (data: { path: string | null }) => {
         setFFMPEGPath(data.path || '');
@@ -212,6 +218,15 @@ const App = () => {
     }
   };
 
+  const handleCodecChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const newCodec = e.target.value as VideoCodec;
+    setCodec(newCodec);
+    if (window.iina) {
+      const payload: IPCSetCodecMessage = { codec: newCodec };
+      window.iina.postMessage('set-codec', payload);
+    }
+  };
+
   const handleSetOutputDir = () => {
     if (window.iina) {
       window.iina.postMessage('set-output-dir', {});
@@ -275,6 +290,20 @@ const App = () => {
           className="text-input"
           placeholder="e.g. output.mp4"
         />
+      </div>
+
+      <div className="input-group">
+        <label>Video Codec</label>
+        <select
+          value={codec}
+          onChange={handleCodecChange}
+          className="text-input select-input"
+        >
+          <option value="x264">x264</option>
+          <option value="x265">x265</option>
+          <option value="h264_videotoolbox">h264_videotoolbox</option>
+          <option value="hevc_videotoolbox">hevc_videotoolbox</option>
+        </select>
       </div>
 
       <div className="section-header" onClick={() => setIsFFMPEGSectionCollapsed(!isFFMPEGSectionCollapsed)} style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>

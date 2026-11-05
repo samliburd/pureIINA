@@ -1,13 +1,17 @@
 import { AppState, VideoProcessor } from "./core";
 import { TimeUtils, UserPrompts, CoordinateUtils } from "./utils";
-import { IPCUpdateMessage, IPCCropUpdateMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage } from "./types";
+import { IPCUpdateMessage, IPCCropUpdateMessage, IPCTimeUpdateMessage, IPCSyncStateMessage, IPCSetFilenameMessage, IPCSetCropStringMessage, VideoTrackInfo, IPCSetFFMPEGPathMessage, IPCSetCodecMessage, VideoCodec } from "./types";
 import { findFFMPEGPath, setFFMPEGPath, downloadFFMPEG, unzip } from "./helpers";
 
-const { core, event, utils, file, console, sidebar, mpv, overlay } = iina;
+const { core, event, utils, file, console, sidebar, mpv, overlay, preferences } = iina;
 
 
 // Initialize Core Logic
 const appState = new AppState();
+const savedCodec = preferences.get("video_codec");
+if (savedCodec && ["x264", "x265", "h264_videotoolbox", "hevc_videotoolbox"].includes(savedCodec)) {
+    appState.codec = savedCodec as VideoCodec;
+}
 const videoProcessor = new VideoProcessor(appState);
 
 let currentFFMPEGPath: string | null = null;
@@ -158,7 +162,8 @@ event.on("iina.window-loaded", () => {
             cropString: CoordinateUtils.cropToCoordsString(appState.normalizedCoordinates) || "",
             showHud: appState.showHud,
             ffmpegPath: currentFFMPEGPath,
-            isPaused: core.status.paused
+            isPaused: core.status.paused,
+            codec: appState.codec,
         };
         sidebar.postMessage("sync-state", payload);
     });
@@ -166,6 +171,14 @@ event.on("iina.window-loaded", () => {
     sidebar.onMessage("set-filename", (data: IPCSetFilenameMessage) => {
         appState.outputFilename = data.filename;
         broadcastCommand();
+    });
+
+    sidebar.onMessage("set-codec", (data: IPCSetCodecMessage) => {
+        if (data.codec) {
+            appState.codec = data.codec;
+            preferences.set("video_codec", data.codec);
+            broadcastCommand();
+        }
     });
 
     sidebar.onMessage("set-ffmpeg-path", (data: IPCSetFFMPEGPathMessage) => {

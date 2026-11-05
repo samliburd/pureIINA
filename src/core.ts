@@ -3,10 +3,12 @@ import {
   DEFAULT_START_TIME,
   FFMPEG_DEFAULTS,
   REGEX_WHITESPACE,
+  CODEC_CONFIGS,
+  DEFAULT_CODEC,
 } from "./constants";
 import { TimeUtils, CoordinateUtils, UserPrompts } from "./utils";
 import * as helpers from "./helpers";
-import { Dimensions, Point, Rect, FFMPEGCommandResult } from "./types";
+import { Dimensions, Point, Rect, FFMPEGCommandResult, VideoCodec } from "./types";
 
 export class AppState {
   dimensions: Dimensions | null = null;
@@ -23,6 +25,7 @@ export class AppState {
   startTime: string;
   endTime: string;
   isHDR: boolean = false;
+  codec: VideoCodec = DEFAULT_CODEC;
 
   constructor() {
     this.dimensions = null;
@@ -40,6 +43,7 @@ export class AppState {
     this.useCrop = false;
     this.startTime = DEFAULT_START_TIME;
     this.endTime = this.getFormattedDuration();
+    this.codec = DEFAULT_CODEC;
   }
 
   getFormattedDuration(): string {
@@ -142,9 +146,12 @@ export class FFMPEGCommandBuilder {
 
     const videoArgs = filterString ? ["-vf", filterString] : [];
 
+    const codecConfig =
+      CODEC_CONFIGS[this.state.codec] || CODEC_CONFIGS[DEFAULT_CODEC];
+
     const encodingArgs = [
       "-c:v",
-      FFMPEG_DEFAULTS.codec,
+      codecConfig.encoder,
       ...(this.state.isHDR
         ? [
             "-pix_fmt",
@@ -157,10 +164,10 @@ export class FFMPEGCommandBuilder {
             "bt709",
           ]
         : []),
-      "-crf",
-      FFMPEG_DEFAULTS.crf.toString(),
-      "-preset",
-      FFMPEG_DEFAULTS.preset,
+      codecConfig.qualityFlag,
+      codecConfig.qualityValue.toString(),
+      ...(codecConfig.preset ? ["-preset", codecConfig.preset] : []),
+      ...(codecConfig.tag ? ["-tag:v", codecConfig.tag] : []),
       "-c:a",
       FFMPEG_DEFAULTS.audioCodec,
       "-ac",
@@ -205,7 +212,13 @@ export class FFMPEGCommandBuilder {
       ? this.state.outputFilename 
       : `${basePath}${this.state.outputFilename}`;
 
-    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${escapedFilename} ${cropFilter}\n-c:v ${FFMPEG_DEFAULTS.codec} ${colorArgs}-crf ${FFMPEG_DEFAULTS.crf} -preset ${FFMPEG_DEFAULTS.preset} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${finalOutputPath} && echo ${finalOutputPath}`;
+    const codecConfig =
+      CODEC_CONFIGS[this.state.codec] || CODEC_CONFIGS[DEFAULT_CODEC];
+    const qualityArgs = `${codecConfig.qualityFlag} ${codecConfig.qualityValue}`;
+    const presetArgs = codecConfig.preset ? ` -preset ${codecConfig.preset}` : "";
+    const tagArgs = codecConfig.tag ? ` -tag:v ${codecConfig.tag}` : "";
+
+    return `ffmpeg -ss ${this.state.timeArr[0]} -to ${this.state.timeArr[1]} -i ${escapedFilename} ${cropFilter}\n-c:v ${codecConfig.encoder} ${colorArgs}${qualityArgs}${presetArgs}${tagArgs} -c:a ${FFMPEG_DEFAULTS.audioCodec} -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart ${finalOutputPath} && echo ${finalOutputPath}`;
   }
 }
 
@@ -343,12 +356,10 @@ export class VideoProcessor {
             if (pct < 0) pct = 0;
             sidebar.postMessage("ffmpeg-progress", { progress: pct });
 
-            if (!skipConfirmation) {
-              const currentDecile = Math.floor(pct / 10) * 10;
-              if (currentDecile > lastOsdPct) {
-                core.osd(`Encoding Progress: ${currentDecile}%`);
-                lastOsdPct = currentDecile;
-              }
+            const currentDecile = Math.floor(pct / 10) * 10;
+            if (currentDecile > lastOsdPct) {
+              core.osd(`Encoding Progress: ${currentDecile}%`);
+              lastOsdPct = currentDecile;
             }
           }
         });

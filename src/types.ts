@@ -1,3 +1,9 @@
+export type VideoCodec =
+    | "x264"
+    | "x265"
+    | "h264_videotoolbox"
+    | "hevc_videotoolbox";
+
 export interface Point {
     x: number;
     y: number;
@@ -63,6 +69,11 @@ export interface IPCSyncStateMessage {
     showHud: boolean;
     ffmpegPath: string | null;
     isPaused: boolean;
+    codec: VideoCodec;
+}
+
+export interface IPCSetCodecMessage {
+    codec: VideoCodec;
 }
 
 export interface IPCSetFilenameMessage {
