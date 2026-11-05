@@ -8,7 +8,7 @@ const { core, event, utils, file, console, sidebar, mpv, overlay, preferences } 
 
 // Initialize Core Logic
 const appState = new AppState();
-const savedCodec = preferences.get("video_codec");
+const savedCodec = preferences.get("codec") || preferences.get("video_codec");
 if (savedCodec && ["x264", "x265", "h264_videotoolbox", "hevc_videotoolbox"].includes(savedCodec)) {
     appState.codec = savedCodec as VideoCodec;
 }
@@ -120,6 +120,14 @@ event.on("iina.window-loaded", () => {
         const duration = appState.getFormattedDuration();
         appState.endTime = duration;
         appState.timeArr[1] = duration;
+
+        // Respect default crop mode preference
+        const defaultCrop = preferences.get("crop_mode_default");
+        if (defaultCrop !== undefined && defaultCrop !== null) {
+            appState.useCrop = Boolean(defaultCrop);
+            appState.showHud = Boolean(defaultCrop);
+        }
+
         const payload: IPCTimeUpdateMessage = { type: "end", time: duration };
         sidebar.postMessage("time-update", payload);
         broadcastVideoState();
@@ -178,6 +186,7 @@ event.on("iina.window-loaded", () => {
     sidebar.onMessage("set-codec", (data: IPCSetCodecMessage) => {
         if (data.codec) {
             appState.codec = data.codec;
+            preferences.set("codec", data.codec);
             preferences.set("video_codec", data.codec);
             broadcastCommand();
         }

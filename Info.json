@@ -20,5 +20,12 @@
     "name": "iinatools"
   },
   "allowedDomains": ["*"],
-  "preferenceDefaults": {}
+  "preferencesPage": "preferences.html",
+  "helpPage": "help.html",
+  "preferenceDefaults": {
+    "ffmpeg_path": "",
+    "codec": "x264",
+    "crop_mode_default": false,
+    "output_dir": ""
+  }
 }

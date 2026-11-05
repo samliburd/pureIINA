@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <title>iinatools Preferences</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      --bg-color: transparent;
+      --text-color: #1d1d1f;
+      --secondary-text: rgba(0, 0, 0, 0.55);
+      --border-color: rgba(0, 0, 0, 0.15);
+      --input-bg: rgba(255, 255, 255, 0.85);
+      --focus-ring: #007aff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text-color: #f5f5f7;
+        --secondary-text: rgba(255, 255, 255, 0.55);
+        --border-color: rgba(255, 255, 255, 0.2);
+        --input-bg: rgba(40, 40, 42, 0.85);
+        --focus-ring: #0a84ff;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 18px 20px;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    h2 {
+      margin: 0 0 16px 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .pref-section {
+      margin-bottom: 20px;
+    }
+
+    .pref-label {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+
+    .pref-help {
+      margin: 0 0 8px 0;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--secondary-text);
+    }
+
+    .pref-help code {
+      font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+      font-size: 10.5px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(127, 127, 127, 0.15);
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      min-height: 28px;
+      padding: 4px 8px;
+      font: inherit;
+      font-size: 12.5px;
+      color: var(--text-color);
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--focus-ring);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-container input[type="checkbox"] {
+      margin-top: 2px;
+      cursor: pointer;
+    }
+
+    .checkbox-text {
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <h2>pureIINA (iinatools) Settings</h2>
+
+  <!-- 1. FFmpeg Binary Path -->
+  <div class="pref-section">
+    <label class="pref-label" for="ffmpeg_path">FFmpeg Binary Path</label>
+    <p class="pref-help">
+      Optional custom path to an FFmpeg executable. If supplied, iinatools will strictly prefer this binary over automatic system PATH discovery.
+      Typical paths: <code>/opt/homebrew/bin/ffmpeg</code> (Apple Silicon) or <code>/usr/local/bin/ffmpeg</code> (Intel).
+    </p>
+    <input
+      type="text"
+      id="ffmpeg_path"
+      data-pref-key="ffmpeg_path"
+      placeholder="Leave blank for automatic detection"
+      spellcheck="false"
+      autocomplete="off"
+    />
+  </div>
+
+  <!-- 2. Preferred Video Codec -->
+  <div class="pref-section">
+    <label class="pref-label" for="codec">Preferred Video Codec</label>
+    <p class="pref-help">
+      Default encoder for exported clips. Hardware codecs utilize Apple Silicon Media Engines for high-speed export with minimal CPU load.
+    </p>
+    <select id="codec" data-pref-key="codec">
+      <option value="x264">x264 (H.264 Software - Universal Compatibility, Default)</option>
+      <option value="x265">x265 (H.265 / HEVC Software - High Compression)</option>
+      <option value="h264_videotoolbox">h264_videotoolbox (Apple Silicon Hardware H.264)</option>
+      <option value="hevc_videotoolbox">hevc_videotoolbox (Apple Silicon Hardware HEVC)</option>
+    </select>
+  </div>
+
+  <!-- 3. Default Crop Mode -->
+  <div class="pref-section">
+    <label class="checkbox-container">
+      <input
+        type="checkbox"
+        id="crop_mode_default"
+        data-type="bool"
+        data-pref-key="crop_mode_default"
+      />
+      <span class="checkbox-text">Enable crop mode by default</span>
+    </label>
+    <p class="pref-help" style="margin-top: 4px; margin-left: 22px;">
+      When enabled, the interactive video crop bounding box and HUD overlay will activate automatically whenever a video loads (default: disabled).
+    </p>
+  </div>
+
+  <!-- 4. Default Output Directory -->
+  <div class="pref-section">
+    <label class="pref-label" for="output_dir">Default Output Directory</label>
+    <p class="pref-help">
+      Optional absolute path to an export directory. If supplied, exported clips will be saved here instead of the input video's parent folder.
+      Can also be overridden per-session via the sidebar.
+    </p>
+    <input
+      type="text"
+      id="output_dir"
+      data-pref-key="output_dir"
+      placeholder="/Users/username/Movies/pureIINA"
+      spellcheck="false"
+      autocomplete="off"
+    />
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.iina && window.iina.preferences) {
+        var preferences = window.iina.preferences;
+        var elements = document.querySelectorAll("[data-pref-key]");
+
+        elements.forEach(function (el) {
+          var key = el.getAttribute("data-pref-key");
+          var isBool = el.getAttribute("data-type") === "bool" || el.type === "checkbox";
+
+          var handleValue = function (val) {
+            if (val !== undefined && val !== null) {
+              if (isBool) {
+                el.checked = Boolean(val);
+              } else {
+                el.value = val;
+              }
+            }
+          };
+
+          // Query preference value using callback or direct return
+          try {
+            var directVal = preferences.get(key, handleValue);
+            if (directVal !== undefined && directVal !== null && typeof directVal !== "function") {
+              handleValue(directVal);
+            }
+          } catch (e) {
+            console.error("Error reading preference key " + key, e);
+          }
+
+          var saveValue = function () {
+            var val = isBool ? el.checked : el.value;
+            try {
+              preferences.set(key, val);
+              if (typeof preferences.sync === "function") {
+                preferences.sync();
+              }
+            } catch (e) {
+              console.error("Error saving preference key " + key, e);
+            }
+          };
+
+          el.addEventListener("change", saveValue);
+          if (el.tagName === "INPUT" && !isBool) {
+            el.addEventListener("blur", saveValue);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

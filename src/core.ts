@@ -38,14 +38,39 @@ export class AppState {
     this.isHidden = true;
     this.timeArr = [DEFAULT_START_TIME, this.getFormattedDuration()];
 
-    // --- UPDATED: Initialize as null instead of fetching from preferences ---
-    this.outputDir = null;
+    const prefOutputDir = preferences.get("output_dir");
+    if (prefOutputDir && typeof prefOutputDir === "string" && prefOutputDir.trim().length > 0) {
+      this.outputDir = prefOutputDir.trim();
+    } else {
+      this.outputDir = null;
+    }
 
     this.outputFilename = "";
-    this.useCrop = false;
+
+    const defaultCrop = preferences.get("crop_mode_default");
+    this.useCrop = Boolean(defaultCrop);
+    this.showHud = Boolean(defaultCrop);
+
     this.startTime = DEFAULT_START_TIME;
     this.endTime = this.getFormattedDuration();
-    this.codec = DEFAULT_CODEC;
+
+    const savedCodec = preferences.get("codec") || preferences.get("video_codec");
+    if (savedCodec && ["x264", "x265", "h264_videotoolbox", "hevc_videotoolbox"].includes(savedCodec)) {
+      this.codec = savedCodec as VideoCodec;
+    } else {
+      this.codec = DEFAULT_CODEC;
+    }
+  }
+
+  getResolvedOutputDir(): string | null {
+    if (this.outputDir && this.outputDir.trim().length > 0) {
+      return this.outputDir.trim();
+    }
+    const prefOutputDir = preferences.get("output_dir");
+    if (prefOutputDir && typeof prefOutputDir === "string" && prefOutputDir.trim().length > 0) {
+      return prefOutputDir.trim();
+    }
+    return this.getInputFileDirectory();
   }
 
   getFormattedDuration(): string {
@@ -111,10 +136,8 @@ export class FFMPEGCommandBuilder {
       this.state.outputFilename = `${filename}.output.${FFMPEG_DEFAULTS.container}`;
     }
 
-    // --- UPDATED LOGIC ---
-    // Fall back to the input file's directory if outputDir is empty
-    const resolvedOutputDir =
-      this.state.outputDir || this.state.getInputFileDirectory();
+    // Output dir precedence: Session outputDir > Preferences output_dir > Input file directory
+    const resolvedOutputDir = this.state.getResolvedOutputDir();
 
     if (!resolvedOutputDir) {
       core.osd(
@@ -208,7 +231,7 @@ export class FFMPEGCommandBuilder {
     
     const colorArgs = this.state.isHDR ? "-pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 " : "";
 
-    const resolvedOutputDir = this.state.outputDir || this.state.getInputFileDirectory() || "";
+    const resolvedOutputDir = this.state.getResolvedOutputDir() || "";
     const basePath = resolvedOutputDir ? `${resolvedOutputDir}/` : "";
     const finalOutputPath = this.state.outputFilename.startsWith("/") 
       ? this.state.outputFilename 

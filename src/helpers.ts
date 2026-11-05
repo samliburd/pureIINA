@@ -52,10 +52,16 @@ export async function unzip(): Promise<number | undefined> {
 export async function findFFMPEGPath(): Promise<string | null> {
   const prefPath = preferences.get("ffmpeg_path");
 
-  if (prefPath && file.exists(prefPath)) {
-    FFMPEG_BINARY_PATH = prefPath;
-    logger(`ffmpeg found at ${FFMPEG_BINARY_PATH}`);
-    return prefPath;
+  // If an ffmpeg path is supplied in preferences, prefer that over the find logic
+  if (prefPath && typeof prefPath === "string" && prefPath.trim().length > 0) {
+    const trimmedPath = prefPath.trim();
+    if (file.exists(trimmedPath)) {
+      FFMPEG_BINARY_PATH = trimmedPath;
+      logger(`ffmpeg found from preferences at ${FFMPEG_BINARY_PATH}`);
+      return trimmedPath;
+    } else {
+      logger(`Configured FFmpeg path not found: ${trimmedPath}`);
+    }
   }
 
   // Search system PATHs dynamically
@@ -71,7 +77,6 @@ export async function findFFMPEGPath(): Promise<string | null> {
       const uniquePaths = Array.from(new Set(paths));
       if (uniquePaths.length > 0) {
         FFMPEG_BINARY_PATH = uniquePaths[0];
-        preferences.set("ffmpeg_path", FFMPEG_BINARY_PATH);
         logger(`ffmpeg auto-detected at ${FFMPEG_BINARY_PATH}`);
         return FFMPEG_BINARY_PATH;
       }
