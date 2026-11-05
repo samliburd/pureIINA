@@ -1,12 +1,12 @@
 {
-  "name": "iinatools",
-  "identifier": "com.iinatools.plugin",
+  "name": "pureIINA",
+  "identifier": "com.samliburd.pureiina",
   "version": "1.0.0",
-  "description": "Description here",
+  "description": "Interactive video crop, trim, tone-map, and export plugin for IINA (homage to pureMPV)",
   "author": {
     "name": "samliburd",
     "email": "hello@xbtaq0r6qfog.top",
-    "url": "https://github.com/samliburd/iinatools"
+    "url": "https://github.com/samliburd/pureIINA"
   },
   "entry": "dist/index.js",
   "permissions": [
@@ -17,7 +17,7 @@
     "file-system"
   ],
   "sidebarTab": {
-    "name": "iinatools"
+    "name": "pureIINA"
   },
   "allowedDomains": ["*"],
   "preferencesPage": "preferences.html",

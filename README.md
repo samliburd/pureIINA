@@ -1,8 +1,8 @@
-# pureIINA (`iinatools`)
+# pureIINA
 
 > **Precision Video Trimming, Interactive Visual Cropping, and FFmpeg Automation Plugin for IINA (macOS)**
 
-`pureIINA` (`iinatools`) is a media processing plugin designed specifically for the macOS open-source media player [IINA](https://iina.io). It bridges interactive playback inspection with the power of FFmpeg, allowing you to visually cut, crop, tone-map, and export video clips directly from the player interface without opening a heavy non-linear video editor.
+`pureIINA` is a media processing plugin designed specifically for the macOS open-source media player [IINA](https://iina.io) (inspired by the `purempv` script). It bridges interactive playback inspection with the power of FFmpeg, allowing you to visually cut, crop, tone-map, and export video clips directly from the player interface without opening a heavy non-linear video editor.
 
 ---
 
@@ -47,8 +47,8 @@ Clone the repository directly into IINA's local plugins directory:
 ```bash
 mkdir -p "$HOME/Library/Application Support/com.colliderli.iina/plugins"
 cd "$HOME/Library/Application Support/com.colliderli.iina/plugins"
-git clone https://github.com/samliburd/iinatools.git
-cd iinatools
+git clone https://github.com/samliburd/pureIINA.git
+cd pureIINA
 ```
 
 ### 2. Install Dependencies
@@ -79,7 +79,7 @@ This compiles:
 
 1. Launch **IINA**.
 2. Open **Preferences** (`Cmd + ,`) and navigate to the **Plugins** tab.
-3. Ensure **iinatools** is checked and enabled.
+3. Ensure **pureIINA** is checked and enabled.
 4. Open any video file and toggle the sidebar (`Cmd + Shift + S` or click the sidebar icon) to access the **pureIINA** tab.
 
 ---

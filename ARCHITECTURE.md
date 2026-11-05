@@ -1,10 +1,10 @@
-# Architecture Manual: iinatools (pureIINA)
+# Architecture Manual: pureIINA
 
 ## 1. Executive Summary
 
-`iinatools` (internally identified as `com.iinatools.plugin` and user-facing as **pureIINA**) is an extensible video processing and workflow automation plugin designed specifically for the macOS open-source media player [IINA](https://iina.io). Built atop IINA's hybrid JavaScript plugin architecture and `mpv` multimedia backend, `iinatools` bridges playback-time video inspection with automated FFmpeg-powered media transformation.
+`pureIINA` (internally identified as `com.samliburd.pureiina`) is an extensible video processing and workflow automation plugin designed specifically for the macOS open-source media player [IINA](https://iina.io) (inspired by the `purempv` script). Built atop IINA's hybrid JavaScript plugin architecture and `mpv` multimedia backend, `pureIINA` bridges playback-time video inspection with automated FFmpeg-powered media transformation.
 
-The system's core design philosophy emphasizes **non-destructive, zero-latency visual authoring coupled with headless, high-fidelity media manipulation**. Rather than requiring external video editing applications or manual shell script authoring, `iinatools` exposes an interactive graphical control surface directly within the IINA window chrome. Users can mark precision millisecond-accurate edit boundaries, interactively adjust spatial video crop rectangles overlaid onto active video frames, tonemap high dynamic range (HDR) source streams, and execute transcodes either directly via child process orchestration or through generated shell commands.
+The system's core design philosophy emphasizes **non-destructive, zero-latency visual authoring coupled with headless, high-fidelity media manipulation**. Rather than requiring external video editing applications or manual shell script authoring, `pureIINA` exposes an interactive graphical control surface directly within the IINA window chrome. Users can mark precision millisecond-accurate edit boundaries, interactively adjust spatial video crop rectangles overlaid onto active video frames, tonemap high dynamic range (HDR) source streams, and execute transcodes either directly via child process orchestration or through generated shell commands.
 
 ### Core Technologies & Tooling
 
@@ -41,7 +41,7 @@ The repository is organized into distinct domain layers separating the plugin ru
 
 ```mermaid
 graph TD
-    Root["iinatools Repository Root"]
+    Root["pureIINA Repository Root"]
 
     subgraph ConfigFiles["Build & Workspace Configuration"]
         PkgJson["package.json (Dependencies & Parcel Targets)"]
@@ -94,7 +94,7 @@ graph TD
 
 | File                               | Purpose                                                                                           | Key Settings & Structural Invariants                                                                                                                                                                                                                          |
 | :--------------------------------- | :------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`Info.json`](./Info.json)         | IINA Plugin Manifest declaring identification, permissions, and entry points.                     | Defines `identifier: "com.iinatools.plugin"`, `entry: "dist/index.js"`, `sidebarTab.name: "iinatools"`, and permissions (`show-osd`, `show-alert`, `video-overlay`, `network-request`, `file-system`).                                                        |
+| [`Info.json`](./Info.json)         | IINA Plugin Manifest declaring identification, permissions, and entry points.                     | Defines `identifier: "com.samliburd.pureiina"`, `entry: "dist/index.js"`, `sidebarTab.name: "pureIINA"`, and permissions (`show-osd`, `show-alert`, `video-overlay`, `network-request`, `file-system`).                                                        |
 | [`package.json`](./package.json)   | NPM package definition, dependency lock, script lifecycle, and multi-target Parcel configuration. | Defines scripts `serve-sidebar`, `serve-overlay`, and `build`. Configures three compilation targets: `overlay` (`outputFormat: "global"`), `sidebar` (`outputFormat: "global"`), and `entry` (`distDir: "./dist/"`). Specifies `browserslist: "safari >= 9"`. |
 | [`tsconfig.json`](./tsconfig.json) | TypeScript compiler options and compilation scope.                                                | Specifies `target: "ES2022"`, `module: "ESNext"`, `jsx: "react"`, `moduleResolution: "node"`, `strict: true`. Includes `src/**/*`, `ui/**/*`, and `node_modules/iina-plugin-definition/iina/**/*.d.ts`.                                                       |
 | [`jsconfig.json`](./jsconfig.json) | IDE path resolution and secondary type root lookup.                                               | Binds `typeRoots` to `./node_modules/@types` and `./node_modules/iina-plugin-definition`.                                                                                                                                                                     |
@@ -112,7 +112,7 @@ The compilation and execution pipelines diverge across the background process an
 
 ## 3. System Context
 
-`iinatools` sits at the junction between IINA's Cocoa/Swift host layer, the embedded `mpv` C core, isolated WebKit browser instances, and macOS operating system utilities.
+`pureIINA` sits at the junction between IINA's Cocoa/Swift host layer, the embedded `mpv` C core, isolated WebKit browser instances, and macOS operating system utilities.
 
 ```mermaid
 flowchart TD
@@ -122,7 +122,7 @@ flowchart TD
         MPVCore["Embedded libmpv Playback Engine"]
     end
 
-    subgraph PluginCore["iinatools Background Controller (JavaScript / V8)"]
+    subgraph PluginCore["pureIINA Background Controller (JavaScript / V8)"]
         IndexModule["Plugin Controller (src/index.ts)"]
         StateEngine["AppState & VideoProcessor (src/core.ts)"]
         HelperEngine["FFmpeg Automation & Discovery (src/helpers.ts)"]
@@ -288,7 +288,7 @@ sequenceDiagram
 
 ### 4.3 FFmpeg Encoding & Real-Time Progress Pipeline
 
-When the user triggers video export, `iinatools` executes FFmpeg directly as an asynchronous subprocess and streams progress indicators back to the user interface.
+When the user triggers video export, `pureIINA` executes FFmpeg directly as an asynchronous subprocess and streams progress indicators back to the user interface.
 
 ```mermaid
 sequenceDiagram
@@ -353,7 +353,7 @@ sequenceDiagram
 
 ### 4.4 Automated FFmpeg Discovery & Download Pipeline
 
-For users without FFmpeg installed, `iinatools` provides automated discovery and automated network downloading.
+For users without FFmpeg installed, `pureIINA` provides automated discovery and automated network downloading.
 
 ```mermaid
 sequenceDiagram
@@ -661,8 +661,8 @@ const height = cropBox.height / safeScale;
 ```bash
 # 1. Clone repository into IINA's active plugin directory
 cd "$HOME/Library/Application Support/com.colliderli.iina/plugins"
-git clone https://github.com/samliburd/iinatools.git
-cd iinatools
+git clone https://github.com/samliburd/pureIINA.git
+cd pureIINA
 
 # 2. Install development dependencies
 npm install
@@ -681,7 +681,7 @@ npm run build
 
 ### Environment Variables & Plugin Preferences
 
-`iinatools` consumes configuration stored persistently in IINA's native preference database via `iina.preferences`:
+`pureIINA` consumes configuration stored persistently in IINA's native preference database via `iina.preferences`:
 
 | Preference Key | Scope                        | Default / Fallback                                                                 | Description                                                             |
 | :------------- | :--------------------------- | :--------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
@@ -694,7 +694,7 @@ npm run build
 
 ### Credential & Data Storage
 
-- **Zero Telemetry**: `iinatools` collects no analytics, usage telemetry, or user interaction metrics.
+- **Zero Telemetry**: `pureIINA` collects no analytics, usage telemetry, or user interaction metrics.
 - **Local Preference Storage**: User preferences (such as `ffmpeg_path`) are stored locally within IINA's application sandbox support directory (`com.colliderli.iina`).
 
 ### Subprocess & Shell Injection Protections
